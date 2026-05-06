@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SOUEAST Chile — Strapi Integration Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/tokens.css">
+
+<style>
+  body {
+    background: #fafaf8;
+    font-family: var(--font-body);
+    color: var(--color-ink);
+    padding: 0;
+  }
+  .demo-shell { max-width: 1200px; margin: 0 auto; padding: 48px 32px 96px; }
+
+  .demo-hd { display: flex; align-items: baseline; gap: 16px; padding-bottom: 24px; border-bottom: 1px solid #e5e3df; margin-bottom: 32px; }
+  .demo-hd h1 { font-family: var(--font-display); font-weight: 600; font-size: 28px; margin: 0; letter-spacing: -0.01em; }
+  .demo-hd .tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.04em; color: var(--color-primary); background: var(--color-primary-soft); padding: 4px 8px; border-radius: 4px; text-transform: uppercase; }
+  .demo-hd .lede { color: var(--color-text-2); font-size: 14px; margin-left: auto; max-width: 480px; }
+
+  .demo-grid { display: grid; grid-template-columns: 320px 1fr; gap: 32px; align-items: start; }
+  @media (max-width: 900px) { .demo-grid { grid-template-columns: 1fr; } }
+
+  /* Panel izq: configuración */
+  .panel { background: #fff; border: 1px solid #e5e3df; border-radius: 12px; padding: 20px; }
+  .panel h2 { font-family: var(--font-display); font-size: 13px; font-weight: 600; margin: 0 0 16px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-2); }
+  .panel + .panel { margin-top: 20px; }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .field label { font-size: 11px; font-weight: 600; color: var(--color-text-2); text-transform: uppercase; letter-spacing: 0.04em; }
+  .field input, .field select { width: 100%; padding: 8px 10px; border: 1px solid #d9d6d0; border-radius: 6px; font: inherit; font-size: 13px; background: #fafaf8; }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--color-primary); background: #fff; }
+
+  .seg { display: flex; gap: 0; background: #f1efea; border-radius: 8px; padding: 3px; margin-bottom: 16px; }
+  .seg button { flex: 1; padding: 8px 10px; border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 600; color: var(--color-text-2); border-radius: 6px; cursor: pointer; }
+  .seg button.on { background: #fff; color: var(--color-ink); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--color-ink-2); color: #fff; border: 0; border-radius: 6px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; justify-content: center; }
+  .btn:hover { background: #000; }
+  .btn.secondary { background: transparent; color: var(--color-ink); border: 1px solid #d9d6d0; }
+  .btn.secondary:hover { background: #f1efea; }
+
+  /* Panel der: resultados */
+  .results { display: flex; flex-direction: column; gap: 24px; }
+
+  .result-card { background: #fff; border: 1px solid #e5e3df; border-radius: 12px; overflow: hidden; }
+  .result-hd { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid #e5e3df; background: #fafaf8; }
+  .result-hd h3 { font-family: var(--font-display); font-size: 13px; font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: 0.06em; }
+  .result-hd .url { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--color-text-2); margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
+  .result-bd { padding: 20px; min-height: 80px; }
+
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 8px; border-radius: 4px; }
+  .status.loading { background: #f0e5d8; color: #8a5a1f; }
+  .status.success { background: #dff0e0; color: #2d6a3a; }
+  .status.error   { background: #f9dbd9; color: #9a3027; }
+  .status.idle    { background: #ececea; color: var(--color-text-2); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .dot.pulse { animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+  /* Skeleton */
+  .skel { background: linear-gradient(90deg, #ececea 0%, #f5f4f1 50%, #ececea 100%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; border-radius: 4px; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skel-row { display: flex; flex-direction: column; gap: 8px; padding: 8px 0; }
+  .skel-row + .skel-row { border-top: 1px solid #f1efea; }
+
+  /* Item lists */
+  .item-list { display: flex; flex-direction: column; gap: 0; }
+  .item { display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f1efea; }
+  .item:last-child { border-bottom: 0; }
+  .item .id { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--color-text-2); }
+  .item .name { font-weight: 600; font-size: 14px; }
+  .item .meta { font-size: 11px; color: var(--color-text-2); font-family: 'JetBrains Mono', monospace; }
+
+  /* JSON inspector */
+  .json-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .json-grid { grid-template-columns: 1fr; } }
+  .json-pane { background: #1c1b18; color: #e5e3df; padding: 12px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.5; max-height: 320px; overflow: auto; white-space: pre; }
+  .json-pane .label { color: var(--color-primary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; display: block; }
+
+  .err-box { background: #fff5f4; border: 1px solid #f9dbd9; padding: 12px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9a3027; white-space: pre-wrap; word-break: break-all; }
+
+  .empty { color: var(--color-text-2); font-size: 13px; font-style: italic; }
+
+  .checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .checklist li { display: flex; gap: 10px; align-items: flex-start; font-size: 12px; line-height: 1.5; }
+  .checklist .ck { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; }
+  .checklist .ck.pass { background: #2d6a3a; }
+  .checklist .ck.fail { background: #9a3027; }
+  .checklist .ck.idle { background: #d9d6d0; color: var(--color-text-2); }
+
+  code { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: #f1efea; padding: 1px 5px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<!-- Config (vacío por defecto — se inyecta desde el panel) -->
+<script>
+  window.__APP_CONFIG = window.__APP_CONFIG || {};
+</script>
+
+<!-- Servicios compartidos -->
+<script src="shared/services/env.js"></script>
+<script src="shared/services/strapiService.js"></script>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Hook -->
+<script type="text/babel" src="shared/components/useStrapi.jsx"></script>
+
+<!-- Mock fixtures -->
+<script type="text/babel" data-presets="env,react">
+// Fixture en formato Strapi v4 — para validar la normalización sin levantar Strapi.
+window.__STRAPI_MOCK = {
+  "/api/modelos": {
+    data: [
+      { id: 1, attributes: {
+        slug: "s09",
+        nombre: "S09",
+        tagline: "SUV insignia",
+        precio_desde: 18990000,
+        destacado: true,
+        imagen_principal: { data: { id: 11, attributes: { url: "/uploads/s09-hero.jpg", width: 1920, height: 1080 } } }
+      }},
+      { id: 2, attributes: {
+        slug: "s06",
+        nombre: "S06",
+        tagline: "SUV compacto",
+        precio_desde: 14990000,
+        destacado: true,
+        imagen_principal: { data: { id: 12, attributes: { url: "/uploads/s06-hero.jpg", width: 1920, height: 1080 } } }
+      }},
+      { id: 3, attributes: {
+        slug: "s07",
+        nombre: "S07",
+        tagline: "SUV familiar",
+        precio_desde: 16990000,
+        destacado: false,
+        imagen_principal: { data: null }
+      }},
+    ],
+    meta: { pagination: { page: 1, pageSize: 100, pageCount: 1, total: 3 } }
+  },
+  "/api/sucursales": {
+    data: [
+      { id: 1, attributes: {
+        nombre: "KAUFMANN - SANTIAGO",
+        direccion: "Av. Vicuña Mackenna 2345",
+        comuna: "SANTIAGO",
+        region: "Metropolitana",
+        lat: -33.4489, lng: -70.6693,
+        servicios: ["ventas", "repuestos"],
+        tipo_label: "Sala de ventas",
+        horario: "Lunes a Viernes 9:00 a 19:00"
+      }},
+      { id: 2, attributes: {
+        nombre: "SHOWROOM MOVICENTER",
+        direccion: "Av. Américo Vespucio 1501",
+        comuna: "QUILICURA",
+        region: "Metropolitana",
+        lat: -33.3569, lng: -70.7394,
+        servicios: ["ventas", "repuestos", "servicio"],
+        tipo_label: "Showroom Exclusivo",
+        horario: "Lunes a Domingo 10:00 a 20:00"
+      }},
+      { id: 3, attributes: {
+        nombre: "SUCURSAL CONCEPCIÓN",
+        direccion: "Av. O'Higgins 789",
+        comuna: "CONCEPCIÓN",
+        region: "Biobío",
+        lat: -36.8270, lng: -73.0498,
+        servicios: ["ventas", "repuestos", "servicio"],
+        tipo_label: "Sala de ventas",
+        horario: "Lunes a Viernes 9:00 a 19:00"
+      }},
+    ],
+    meta: { pagination: { page: 1, pageSize: 200, pageCount: 1, total: 3 } }
+  },
+  "/api/footer": {
+    data: { id: 1, attributes: {
+      copyright: "© 2025 SOUEAST Chile",
+      legales: "Las imágenes son referenciales.",
+      columnas: [
+        { titulo: "Modelos", links: [{ label: "S09", href: "/modelos/s09" }, { label: "S06", href: "/modelos/s06" }] },
+        { titulo: "Empresa", links: [{ label: "Sobre nosotros", href: "/empresa" }] },
+      ]
+    }},
+    meta: null
+  }
+};
+
+// Instalador del mock — sustituye fetch por un handler que devuelve el fixture.
+// Lo activamos / desactivamos desde el panel.
+window.__installStrapiMock = function (enabled) {
+  if (!enabled) {
+    if (window.__originalFetch) {
+      window.fetch = window.__originalFetch;
+    }
+    return;
+  }
+  if (!window.__originalFetch) window.__originalFetch = window.fetch;
+  window.fetch = function (url, opts) {
+    const u = String(url);
+    // Match por endpoint base, ignorando query string
+    const path = u.split("?")[0].replace(/^https?:\/\/[^/]+/, "");
+    const fixture = window.__STRAPI_MOCK[path];
+    if (!fixture) {
+      return Promise.resolve(new Response(JSON.stringify({ error: { status: 404, name: "NotFoundError", message: "No mock for " + path }}), { status: 404, headers: { "Content-Type": "application/json" }}));
+    }
+    // Simular latencia para ver el estado loading
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(new Response(JSON.stringify(fixture), { status: 200, headers: { "Content-Type": "application/json" }}));
+      }, 600);
+    });
+  };
+};
+</script>
+
+<!-- App -->
+<script type="text/babel" data-presets="env,react">
+
+const StatusPill = ({ state }) => {
+  const cls = `status ${state}`;
+  const dotCls = state === 'loading' ? 'dot pulse' : 'dot';
+  const label = state === 'loading' ? 'Cargando' : state === 'success' ? 'OK' : state === 'error' ? 'Error' : 'Idle';
+  return <span className={cls}><span className={dotCls}></span>{label}</span>;
+};
+
+const Skeleton = ({ rows = 3 }) => (
+  <div>
+    {Array.from({ length: rows }).map((_, i) => (
+      <div key={i} className="skel-row">
+        <div className="skel" style={{ height: 14, width: '40%' }}></div>
+        <div className="skel" style={{ height: 10, width: '70%' }}></div>
+      </div>
+    ))}
+  </div>
+);
+
+// ── Card que usa el hook contra un endpoint específico ──────────────────────
+const EndpointCard = ({ title, fetcher, render, deps = [], lastUrlRef }) => {
+  const { data, loading, error, refetch } = useStrapi(fetcher, deps);
+  const state = loading ? 'loading' : error ? 'error' : data != null ? 'success' : 'idle';
+
+  return (
+    <div className="result-card">
+      <div className="result-hd">
+        <StatusPill state={state} />
+        <h3>{title}</h3>
+        <span className="url">{lastUrlRef.current[title] || '—'}</span>
+        <button className="btn secondary" style={{ width: 'auto', padding: '4px 10px', fontSize: 11 }} onClick={refetch}>Refetch</button>
+      </div>
+      <div className="result-bd">
+        {loading && <Skeleton rows={3} />}
+        {error && (
+          <div className="err-box">
+            {error.message}
+            {error.body && '\n\n' + JSON.stringify(error.body, null, 2)}
+          </div>
+        )}
+        {!loading && !error && data != null && render(data)}
+      </div>
+    </div>
+  );
+};
+
+// ── Render helpers por content type ─────────────────────────────────────────
+const renderModelos = (data) => {
+  if (!Array.isArray(data) || data.length === 0) return <div className="empty">Sin resultados.</div>;
+  return (
+    <div className="item-list">
+      {data.map((m) => (
+        <div key={m.id} className="item">
+          <span className="id">#{m.id}</span>
+          <div>
+            <div className="name">{m.nombre}</div>
+            <div className="meta">slug: {m.slug} · {m.tagline}</div>
+          </div>
+          <span className="meta">${(m.precio_desde || 0).toLocaleString('es-CL')}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const renderSucursales = (data) => {
+  if (!Array.isArray(data) || data.length === 0) return <div className="empty">Sin resultados.</div>;
+  return (
+    <div className="item-list">
+      {data.map((s) => (
+        <div key={s.id} className="item">
+          <span className="id">#{s.id}</span>
+          <div>
+            <div className="name">{s.nombre}</div>
+            <div className="meta">{s.comuna} · {s.region}</div>
+          </div>
+          <span className="meta">{(s.servicios || []).join(', ')}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const renderFooter = (data) => {
+  if (!data) return <div className="empty">Sin datos.</div>;
+  return (
+    <div>
+      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{data.copyright}</div>
+      <div style={{ fontSize: 12, color: 'var(--color-text-2)', marginBottom: 12 }}>{data.legales}</div>
+      {(data.columnas || []).map((c, i) => (
+        <div key={i} style={{ marginBottom: 8 }}>
+          <strong style={{ fontSize: 12 }}>{c.titulo}</strong>
+          <span style={{ fontSize: 11, color: 'var(--color-text-2)', marginLeft: 8 }}>
+            {(c.links || []).map((l) => l.label).join(' · ')}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ── Inspector de normalización: trae el JSON crudo y lo compara con normalize() ─
+const NormalizeInspector = ({ mode }) => {
+  const [raw, setRaw] = React.useState(null);
+  const [normalized, setNormalized] = React.useState(null);
+  const [err, setErr] = React.useState(null);
+  const [loading, setLoading] = React.useState(false);
+
+  const run = React.useCallback(async () => {
+    setLoading(true); setErr(null);
+    try {
+      const cfg = window.ENV;
+      const url = (cfg.STRAPI_URL || '') + '/api/modelos?populate=*';
+      const res = await fetch(url, { headers: cfg.STRAPI_TOKEN ? { Authorization: 'Bearer ' + cfg.STRAPI_TOKEN } : {} });
+      const json = await res.json();
+      setRaw(json);
+      setNormalized({ data: window.strapiService._normalize(json.data), meta: json.meta });
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { run(); }, [mode, run]);
+
+  return (
+    <div className="result-card">
+      <div className="result-hd">
+        <StatusPill state={loading ? 'loading' : err ? 'error' : raw ? 'success' : 'idle'} />
+        <h3>Normalización (raw vs flat)</h3>
+        <button className="btn secondary" style={{ width: 'auto', padding: '4px 10px', fontSize: 11, marginLeft: 'auto' }} onClick={run}>Re-fetch</button>
+      </div>
+      <div className="result-bd">
+        {err && <div className="err-box">{err}</div>}
+        {!err && (
+          <div className="json-grid">
+            <div className="json-pane">
+              <span className="label">Strapi raw</span>
+              {raw ? JSON.stringify(raw, null, 2).slice(0, 1200) + (JSON.stringify(raw).length > 1200 ? '\n…' : '') : '—'}
+            </div>
+            <div className="json-pane">
+              <span className="label">Normalizado</span>
+              {normalized ? JSON.stringify(normalized, null, 2).slice(0, 1200) + (JSON.stringify(normalized).length > 1200 ? '\n…' : '') : '—'}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── Smoke test: corre algunas aserciones sobre el servicio ──────────────────
+const runSmokeTests = () => {
+  const tests = [];
+
+  // 1. buildQueryString — sintaxis qs flat
+  const qs = window.strapiService._buildQueryString({
+    filters: { region: { $eq: 'Metropolitana' } },
+    pagination: { pageSize: 50 },
+    populate: '*',
+  });
+  tests.push({
+    name: 'buildQueryString genera sintaxis qs flat',
+    pass: qs.includes('filters%5Bregion%5D%5B%24eq%5D=Metropolitana')
+       && qs.includes('pagination%5BpageSize%5D=50')
+       && qs.includes('populate=*'),
+    detail: qs,
+  });
+
+  // 2. normalize — desenvuelve { id, attributes } y { data: ... }
+  const flat = window.strapiService._normalize({
+    id: 1,
+    attributes: {
+      nombre: 'S09',
+      imagen: { data: { id: 11, attributes: { url: '/uploads/foo.jpg' } } },
+    },
+  });
+  tests.push({
+    name: 'normalize aplana { id, attributes } y relaciones',
+    pass: flat.id === 1 && flat.nombre === 'S09' && flat.imagen && flat.imagen.id === 11 && flat.imagen.url === '/uploads/foo.jpg',
+    detail: JSON.stringify(flat),
+  });
+
+  // 3. normalize — listas
+  const list = window.strapiService._normalize([
+    { id: 1, attributes: { nombre: 'A' } },
+    { id: 2, attributes: { nombre: 'B' } },
+  ]);
+  tests.push({
+    name: 'normalize procesa arrays de entidades',
+    pass: Array.isArray(list) && list.length === 2 && list[0].nombre === 'A' && list[1].id === 2,
+    detail: JSON.stringify(list),
+  });
+
+  // 4. assetUrl — relativa + base, absoluta intacta
+  window.__APP_CONFIG.STRAPI_URL = 'https://strapi.example.com';
+  const u1 = window.strapiService.assetUrl({ url: '/uploads/foo.jpg' });
+  const u2 = window.strapiService.assetUrl({ url: 'https://cdn.example.com/bar.jpg' });
+  tests.push({
+    name: 'assetUrl resuelve URLs relativas y deja absolutas intactas',
+    pass: u1 === 'https://strapi.example.com/uploads/foo.jpg' && u2 === 'https://cdn.example.com/bar.jpg',
+    detail: u1 + ' | ' + u2,
+  });
+
+  // 5. cache — segunda llamada sin red
+  window.strapiService.clearCache();
+  const cacheSize0 = window.strapiService._cache.size;
+  tests.push({
+    name: 'clearCache deja el cache vacío',
+    pass: cacheSize0 === 0,
+    detail: 'size=' + cacheSize0,
+  });
+
+  return tests;
+};
+
+// ── App principal ───────────────────────────────────────────────────────────
+const App = () => {
+  const [mode, setMode] = React.useState('mock'); // 'mock' | 'live'
+  const [strapiUrl, setStrapiUrl] = React.useState('');
+  const [strapiToken, setStrapiToken] = React.useState('');
+  const [tests, setTests] = React.useState([]);
+  const lastUrlRef = React.useRef({});
+
+  // Aplicar config + mock cada vez que cambie modo o URL
+  React.useEffect(() => {
+    if (mode === 'mock') {
+      window.__APP_CONFIG.STRAPI_URL = 'https://mock.strapi.local';
+      window.__APP_CONFIG.STRAPI_TOKEN = '';
+      window.ENV = window.__APP_CONFIG;
+      window.__installStrapiMock(true);
+    } else {
+      window.__APP_CONFIG.STRAPI_URL = strapiUrl;
+      window.__APP_CONFIG.STRAPI_TOKEN = strapiToken;
+      window.ENV = window.__APP_CONFIG;
+      window.__installStrapiMock(false);
+    }
+    window.strapiService.clearCache();
+    setTests(runSmokeTests());
+  }, [mode, strapiUrl, strapiToken]);
+
+  // Wrap fetchers para registrar la URL final
+  const trackUrl = React.useCallback((title, fn) => async () => {
+    // Interceptamos fetch transitoriamente para anotar la URL real que dispara el servicio
+    const orig = window.fetch;
+    window.fetch = function (u, o) {
+      lastUrlRef.current[title] = String(u).split('?')[1] ? '?' + String(u).split('?')[1] : String(u);
+      return orig.apply(this, arguments);
+    };
+    try { return await fn(); }
+    finally { window.fetch = orig; }
+  }, []);
+
+  return (
+    <div className="demo-shell">
+      <div className="demo-hd">
+        <h1>Strapi integration</h1>
+        <span className="tag">Fase 0 — smoke test</span>
+        <p className="lede">Verifica el servicio <code>strapiService</code> y el hook <code>useStrapi</code> contra fixtures locales o una instancia real, sin tocar las páginas existentes.</p>
+      </div>
+
+      <div className="demo-grid">
+        {/* Panel izquierdo */}
+        <div>
+          <div className="panel">
+            <h2>Modo</h2>
+            <div className="seg">
+              <button className={mode === 'mock' ? 'on' : ''} onClick={() => setMode('mock')}>Mock</button>
+              <button className={mode === 'live' ? 'on' : ''} onClick={() => setMode('live')}>Strapi real</button>
+            </div>
+
+            {mode === 'live' && (
+              <>
+                <div className="field">
+                  <label>STRAPI_URL</label>
+                  <input
+                    type="text"
+                    placeholder="https://strapi.grupokaufmann.com"
+                    value={strapiUrl}
+                    onChange={(e) => setStrapiUrl(e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label>STRAPI_TOKEN (opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="Bearer token read-only"
+                    value={strapiToken}
+                    onChange={(e) => setStrapiToken(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+
+            {mode === 'mock' && (
+              <p style={{ fontSize: 12, color: 'var(--color-text-2)', margin: '8px 0 0', lineHeight: 1.5 }}>
+                Las llamadas se interceptan y se devuelven fixtures locales en formato Strapi v4. Útil para validar normalización sin levantar Strapi.
+              </p>
+            )}
+
+            <button className="btn" style={{ marginTop: 12 }} onClick={() => { window.strapiService.clearCache(); setTests(runSmokeTests()); }}>
+              Limpiar cache + re-test
+            </button>
+          </div>
+
+          <div className="panel">
+            <h2>Smoke tests</h2>
+            <ul className="checklist">
+              {tests.map((t, i) => (
+                <li key={i}>
+                  <span className={`ck ${t.pass ? 'pass' : 'fail'}`}>{t.pass ? '✓' : '✕'}</span>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{t.name}</div>
+                    <div style={{ color: 'var(--color-text-2)', marginTop: 2, fontFamily: 'JetBrains Mono, monospace', fontSize: 10, wordBreak: 'break-all' }}>
+                      {(t.detail || '').slice(0, 120)}{(t.detail || '').length > 120 ? '…' : ''}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="panel">
+            <h2>Próximos pasos</h2>
+            <ul className="checklist">
+              <li><span className="ck idle">1</span><div>Levantar Strapi con content types <code>modelo</code>, <code>sucursal</code>, <code>footer</code>.</div></li>
+              <li><span className="ck idle">2</span><div>Inyectar <code>STRAPI_URL</code> en cada HTML, junto a <code>APIMAZ_SUBSCRIPTION_KEY</code>.</div></li>
+              <li><span className="ck idle">3</span><div>Reemplazar el array hardcoded de <code>sucursales.html</code> por <code>useStrapi</code> (Fase 1).</div></li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Panel derecho — resultados */}
+        <div className="results">
+          <EndpointCard
+            title="listModelos()"
+            fetcher={trackUrl('listModelos()', () => window.strapiService.listModelos())}
+            render={renderModelos}
+            deps={[mode, strapiUrl, strapiToken]}
+            lastUrlRef={lastUrlRef}
+          />
+          <EndpointCard
+            title="listSucursales({ region: 'Metropolitana' })"
+            fetcher={trackUrl('listSucursales({ region: \'Metropolitana\' })', () => window.strapiService.listSucursales({ region: 'Metropolitana' }))}
+            render={renderSucursales}
+            deps={[mode, strapiUrl, strapiToken]}
+            lastUrlRef={lastUrlRef}
+          />
+          <EndpointCard
+            title="getFooter()"
+            fetcher={trackUrl('getFooter()', () => window.strapiService.getFooter())}
+            render={renderFooter}
+            deps={[mode, strapiUrl, strapiToken]}
+            lastUrlRef={lastUrlRef}
+          />
+          <NormalizeInspector mode={mode} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body>
+</html>

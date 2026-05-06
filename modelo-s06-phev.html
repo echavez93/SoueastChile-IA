@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SOUEAST Chile — S06 PHEV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/tokens.css">
+
+<!-- Bloomreach (Exponea) tracking -->
+<script>
+if (!window.__bloomreach_loaded) {
+  window.__bloomreach_loaded = true;
+  window.exponea = window.exponea || {};
+  try {
+    (function(e,n,t,i,o,r){function c(e){return e.reduce((function(e,n){return e[n]=function(){e._.push([n.toString(),arguments])},e}),{_:[]})}o[n]=c(["anonymize","initialize","identify","update","track","trackLink","trackEnhancedEcommerce","getHtml","showHtml","showBanner","showWebLayer","ping","getAbTest","loadDependency","getRecommendation","reloadWebLayers"]),o[n].notifications=c(["isAvailable","isSubscribed","subscribe","unsubscribe"]),o[n]["snippetVersion"]="v2.3.0";var s=t.createElement(i);s.src=r.target+"/js/exponea.min.js";var a=t.getElementsByTagName(i)[0];a.parentNode.insertBefore(s,a)})(window,"exponea",document,"script",window.exponea||{},{target:"https://api.us1.exponea.com",token:"1a92f9a2-1d4c-11ec-bfa5-6a5bcea99ff0",track:{visits:!0}});
+    exponea.initialize({target:"https://api.us1.exponea.com",token:"1a92f9a2-1d4c-11ec-bfa5-6a5bcea99ff0",track:{visits:true}});
+    exponea.start();
+  } catch (e) { console.warn("[bloomreach] init failed", e); }
+}
+</script>
+<style>
+  html, body { background: var(--color-ink); }
+  .app {
+    background: #fff;
+    min-height: 100vh;
+    margin: 0 auto;
+    transition: max-width 280ms var(--ease-out), box-shadow 280ms;
+  }
+  .app[data-vp="desktop"] { max-width: 100%; }
+  .app[data-vp="mobile"] {
+    max-width: 420px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.5);
+    --container-pad: 20px;
+    --fs-section: 22px;
+    --fs-h2: 24px;
+    --fs-eyebrow: 18px;
+    --fs-hero: 22px;
+    --fs-h3: 20px;
+    --fs-h4: 18px;
+    --fs-h5: 16px;
+    --nav-h: 56px;
+  }
+  .app[data-vp="mobile"] .nav-links { display: none !important; }
+  .app[data-vp="mobile"] .nav-right a:nth-child(3),
+  .app[data-vp="mobile"] .nav-right span { display: none !important; }
+  .app[data-vp="mobile"] .nav-right a { font-size: 13px; }
+  .app[data-vp="mobile"] .seg__grid { grid-template-columns: 1fr !important; }
+  .app[data-vp="mobile"] .desc { grid-template-columns: 1fr !important; gap: 32px; padding: 48px var(--container-pad); }
+  .app[data-vp="mobile"] .col__grid { grid-template-columns: 1fr !important; }
+  .app[data-vp="mobile"] .cot__form { grid-template-columns: 1fr !important; }
+  .app[data-vp="mobile"] .ft__cols { grid-template-columns: 1fr !important; }
+
+  /* === S06 PHEV: backgrounds con imágenes reales (assets/s06-phev) === */
+  /* Galería de características — slider conserva su lógica, solo cambia la imagen por slide */
+  body[data-modelo="S06 PHEV"] .gal__img[data-s06phev-slide="0"] { background-image: url('assets/s06-phev/caracteristica-pantalla.webp') !important; }
+  body[data-modelo="S06 PHEV"] .gal__img[data-s06phev-slide="1"] { background-image: url('assets/s06-phev/caracteristica-diseno.webp') !important; }
+  body[data-modelo="S06 PHEV"] .gal__img[data-s06phev-slide="2"] { background-image: url('assets/s06-phev/caracteristica-cargador.webp') !important; }
+  body[data-modelo="S06 PHEV"] .gal__img[data-s06phev-slide="3"] { background-image: url('assets/s06-phev/caracteristica-sunroof.webp') !important; }
+
+  /* Colores — exterior aéreo + lateral por color seleccionado */
+  body[data-modelo="S06 PHEV"] .col__main { background-image: url('assets/s06-phev/exterior-auroragreen-aereo.webp') !important; }
+  body[data-modelo="S06 PHEV"] .col__side { background-image: url('assets/s06-phev/exterior-auroragreen-lateral.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-color="0"] .col__main { background-image: url('assets/s06-phev/exterior-auroragreen-aereo.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-color="0"] .col__side { background-image: url('assets/s06-phev/exterior-auroragreen-lateral.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-color="1"] .col__main { background-image: url('assets/s06-phev/exterior-starlitblack-aereo.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-color="1"] .col__side { background-image: url('assets/s06-phev/exterior-starlitblack-lateral.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-color="2"] .col__main { background-image: url('assets/s06-phev/exterior-snowwhite-aereo.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-color="2"] .col__side { background-image: url('assets/s06-phev/exterior-snowwhite-lateral.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-color="3"] .col__main { background-image: url('assets/s06-phev/exterior-cosmicsilver-aereo.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-color="3"] .col__side { background-image: url('assets/s06-phev/exterior-cosmicsilver-lateral.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-color="4"] .col__main { background-image: url('assets/s06-phev/exterior-moongrey-aereo.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-color="4"] .col__side { background-image: url('assets/s06-phev/exterior-moongrey-lateral.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-color="5"] .col__main { background-image: url('assets/s06-phev/exterior-phantomgrey-aereo.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-color="5"] .col__side { background-image: url('assets/s06-phev/exterior-phantomgrey-lateral.webp') !important; }
+  /* Interior */
+  body[data-modelo="S06 PHEV"][data-s06phev-coltab="Interior"] .col__main { background-image: url('assets/s06-phev/interior-01.webp') !important; }
+  body[data-modelo="S06 PHEV"][data-s06phev-coltab="Interior"] .col__side { background-image: url('assets/s06-phev/interior-02.webp') !important; }
+
+  /* Seguridad — una imagen por card en orden ICA / HMA / LKA */
+  body[data-modelo="S06 PHEV"] .seg__grid > .seg__card:nth-child(1) .seg__img { background-image: url('assets/s06-phev/seguridad-ICA.webp') !important; }
+  body[data-modelo="S06 PHEV"] .seg__grid > .seg__card:nth-child(2) .seg__img { background-image: url('assets/s06-phev/seguridad-HMA.webp') !important; }
+  body[data-modelo="S06 PHEV"] .seg__grid > .seg__card:nth-child(3) .seg__img { background-image: url('assets/s06-phev/seguridad-LKA.webp') !important; }
+
+  /* Asegura cobertura del fondo en todas las secciones */
+  body[data-modelo="S06 PHEV"] .col__main,
+  body[data-modelo="S06 PHEV"] .col__side,
+  body[data-modelo="S06 PHEV"] .gal__img,
+  body[data-modelo="S06 PHEV"] .seg__img {
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+  }
+</style>
+
+<script type="application/json" id="speaker-notes">[]</script>
+</head>
+<body data-modelo="S06 PHEV">
+
+<div id="root"></div>
+
+<!-- App config -->
+<script>
+  window.__APP_CONFIG = {
+    APIMAZ_SUBSCRIPTION_KEY: "7c9926ce2e1646538d6e2f0090910004",
+    STRAPI_URL: "http://localhost:1337",
+    STRAPI_TOKEN: ""
+  };
+</script>
+
+<!-- Servicios compartidos -->
+<script src="shared/services/env.js"></script>
+<script src="shared/services/cotizadorService.js"></script>
+<script src="shared/services/cotizarRouter.js"></script>
+<script src="shared/services/bloomreachService.js"></script>
+<script src="shared/services/strapiService.js"></script>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Data -->
+<script src="shared/data/regiones-comunas.js"></script>
+
+<!-- Tweaks helper -->
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<!-- Shared components -->
+<script type="text/babel" src="shared/components/useStrapi.jsx"></script>
+<script type="text/babel" src="shared/components/Icons.jsx"></script>
+<script type="text/babel" src="shared/components/Logo.jsx"></script>
+<script type="text/babel" src="shared/components/CTA.jsx"></script>
+<script type="text/babel" src="shared/components/Navbar.jsx"></script>
+<script type="text/babel" src="shared/components/MegaMenu.jsx"></script>
+<script type="text/babel" src="shared/components/Footer.jsx"></script>
+
+<!-- Pages -->
+<script type="text/babel" src="features/modelo/Modelo.jsx"></script>
+
+<!-- App -->
+<script type="text/babel" data-presets="env,react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "viewport": "desktop",
+  "menuState": "initial"
+}/*EDITMODE-END*/;
+
+const App = () => {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+
+  // Bloomreach — init + page_visit
+  React.useEffect(() => {
+    if (window.bloomreachService) {
+      window.bloomreachService.initBloomreach();
+      window.bloomreachService.trackEvent("page_visit", {
+        page: "modelo-s06-phev",
+        url: window.location.href,
+        title: document.title,
+      });
+    }
+  }, []);
+
+  // Scroll to hash on load
+  React.useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.length > 1) {
+      setTimeout(() => {
+        const el = document.querySelector(hash);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }, []);
+
+  // Smooth in-page anchor handling
+  React.useEffect(() => {
+    const onClick = (e) => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const href = a.getAttribute('href');
+      if (href === '#' || href.length < 2) return;
+      
+      const el = document.querySelector(href);
+      if (el) {
+        e.preventDefault();
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, []);
+
+  return (
+    <div className="app" data-vp={tweaks.viewport} data-screen-label="03 Modelo S06 PHEV">
+      <Navbar onOpenMenu={() => setMenuOpen(true)} dark={false} />
+
+      <ModeloPage />
+
+      <Footer />
+
+      <MegaMenu open={menuOpen} onClose={() => setMenuOpen(false)} initialState={tweaks.menuState} />
+
+      {window.TweaksPanel && (
+        <TweaksPanel title="Tweaks">
+          <TweakSection title="Viewport">
+            <TweakRadio
+              label="Tamaño de pantalla"
+              value={tweaks.viewport}
+              options={[{ label: "Desktop", value: "desktop" }, { label: "Mobile", value: "mobile" }]}
+              onChange={(v) => setTweak('viewport', v)}
+            />
+          </TweakSection>
+          <TweakSection title="Menú">
+            <TweakRadio
+              label="Estado inicial"
+              value={tweaks.menuState}
+              options={[{ label: "Inicial", value: "initial" }, { label: "Line-up completo", value: "lineup" }]}
+              onChange={(v) => setTweak('menuState', v)}
+            />
+            <TweakButton onClick={() => setMenuOpen(true)}>Abrir menú</TweakButton>
+          </TweakSection>
+        </TweaksPanel>
+      )}
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+<!-- S06 PHEV: patch de textos visibles tras render (no toca Modelo.jsx) -->
+<script>
+(function () {
+  const TARGETS = [
+    // selector → función que recibe el nodo y aplica el reemplazo
+    { sel: ".mhero__brand span",     fn: (el) => { if (el.textContent.trim() === "S06") el.textContent = "S06 PHEV"; } },
+    { sel: ".mhero__tag",            fn: (el) => { el.textContent = "Híbrido enchufable"; } },
+    { sel: ".spec__model span",      fn: (el) => { if (el.textContent.trim() === "S06") el.textContent = "S06 PHEV"; } },
+    { sel: ".cot__title",            fn: (el) => { el.textContent = "Cotiza tu SOUEAST S06 PHEV"; } },
+    // alts
+    { sel: 'img[alt*="S06"]',        fn: (el) => { el.alt = el.alt.replace(/S06(?! PHEV)/g, "S06 PHEV"); } },
+    // === S06 PHEV: reemplazo de <img> (hero + descripción lateral) por imágenes reales ===
+    { sel: 'img.mhero__bg',          fn: (el) => {
+        const target = "assets/s06-phev/banner-desktop.webp";
+        if (!el.src.endsWith(target)) el.src = target;
+      } },
+    { sel: 'img.desc__img',          fn: (el) => {
+        const target = "assets/s06-phev/descripcion.webp";
+        if (!el.src.endsWith(target)) el.src = target;
+      } },
+    // === Galería slider: marca el slide actual para que el CSS por nth-of-type funcione ===
+    { sel: '.gal__img',              fn: (el) => {
+        // El slider expone aria-label = "galería — <feat>"; mapeamos por texto al índice
+        const label = (el.getAttribute('aria-label') || '').toLowerCase();
+        let i = 0;
+        if (label.includes('pantalla')) i = 0;
+        else if (label.includes('aire')) i = 1;
+        else if (label.includes('asiento')) i = 2;
+        else if (label.includes('carplay') || label.includes('android')) i = 3;
+        if (el.getAttribute('data-s06phev-slide') !== String(i)) {
+          el.setAttribute('data-s06phev-slide', String(i));
+        }
+      } },
+    // === Colores: detectar swatch activo + tab activa y proyectarlos al <body> ===
+    { sel: '.col__swatch.is-active', fn: (el) => {
+        const all = el.parentElement ? Array.from(el.parentElement.querySelectorAll('.col__swatch')) : [];
+        const idx = all.indexOf(el);
+        if (idx >= 0 && document.body.getAttribute('data-s06phev-color') !== String(idx)) {
+          document.body.setAttribute('data-s06phev-color', String(idx));
+        }
+      } },
+    { sel: '.col__tab.is-active',    fn: (el) => {
+        const t = el.textContent.trim();
+        if (document.body.getAttribute('data-s06phev-coltab') !== t) {
+          document.body.setAttribute('data-s06phev-coltab', t);
+        }
+      } },
+  ];
+
+  const apply = () => {
+    TARGETS.forEach(({ sel, fn }) => {
+      document.querySelectorAll(sel).forEach((el) => {
+        try { fn(el); } catch (e) { /* noop */ }
+      });
+    });
+  };
+
+  // Aplica una vez al cargar, y observa el árbol por re-renders.
+  const root = document.getElementById("root");
+  let scheduled = false;
+  const schedule = () => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => { scheduled = false; apply(); });
+  };
+  new MutationObserver(schedule).observe(root, { childList: true, subtree: true, characterData: true });
+  // primera pasada por si el render ya ocurrió
+  schedule();
+})();
+</script>
+
+</body>
+</html>

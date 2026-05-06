@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gracias - SOUEAST Chile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/tokens.css">
+
+<style>
+  html, body { background: var(--color-ink); }
+  .app {
+    background: #fff;
+    min-height: 100vh;
+    margin: 0 auto;
+    transition: max-width 280ms var(--ease-out), box-shadow 280ms;
+  }
+  .app[data-vp="desktop"] { max-width: 100%; }
+  .app[data-vp="mobile"] {
+    max-width: 420px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.5);
+    --container-pad: 20px;
+    --fs-section: 22px;
+    --fs-h2: 24px;
+    --fs-eyebrow: 18px;
+    --fs-hero: 22px;
+    --fs-h3: 20px;
+    --fs-h4: 18px;
+    --fs-h5: 16px;
+    --nav-h: 56px;
+  }
+  .app[data-vp="mobile"] .nav-links { display: none !important; }
+  .app[data-vp="mobile"] .nav-right a:nth-child(3),
+  .app[data-vp="mobile"] .nav-right span { display: none !important; }
+  .app[data-vp="mobile"] .nav-right a { font-size: 13px; }
+  .app[data-vp="mobile"] .ft__cols { grid-template-columns: 1fr !important; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<!-- App config -->
+<script>
+  window.__APP_CONFIG = {
+    APIMAZ_SUBSCRIPTION_KEY: "7c9926ce2e1646538d6e2f0090910004",
+    STRAPI_URL: "http://localhost:1337",
+    STRAPI_TOKEN: ""
+  };
+</script>
+
+<!-- Servicios compartidos -->
+<script src="shared/services/env.js"></script>
+<script src="shared/services/bloomreachService.js"></script>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Tweaks helper -->
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<!-- Shared components -->
+<script type="text/babel" src="shared/components/Icons.jsx"></script>
+<script type="text/babel" src="shared/components/Logo.jsx"></script>
+<script type="text/babel" src="shared/components/CTA.jsx"></script>
+<script type="text/babel" src="shared/components/Navbar.jsx"></script>
+<script type="text/babel" src="shared/components/MegaMenu.jsx"></script>
+<script type="text/babel" src="shared/components/Footer.jsx"></script>
+
+<!-- App -->
+<script type="text/babel" data-presets="env,react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "viewport": "desktop"
+}/*EDITMODE-END*/;
+
+const GraciasPage = () => {
+  const [curlData, setCurlData] = React.useState(null);
+
+  React.useEffect(() => {
+    // Leer datos del localStorage
+    const curl = localStorage.getItem('cotizacion_curl');
+    const data = localStorage.getItem('cotizacion_data');
+    
+    if (curl && data) {
+      setCurlData({
+        curl: curl,
+        data: JSON.parse(data)
+      });
+    }
+  }, []);
+
+  return (
+    <>
+      <section className="gracias-hero">
+        <div className="gracias-container">
+          <div className="gracias-icon">
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+              <circle cx="40" cy="40" r="38" stroke="#E8490C" strokeWidth="4"/>
+              <path d="M25 42L34 51L55 30" stroke="#E8490C" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          
+          <h1 className="gracias-title">¡Gracias por tu solicitud!</h1>
+          
+          <p className="gracias-message">
+            Hemos recibido tu cotización exitosamente. Nuestro equipo se pondrá en contacto contigo a la brevedad.
+          </p>
+
+          <div className="gracias-info">
+            <div className="gracias-info-item">
+              <Icon name="mail" size={24} color="#E8490C" />
+              <span>Revisa tu correo electrónico</span>
+            </div>
+            <div className="gracias-info-item">
+              <Icon name="phone" size={24} color="#E8490C" />
+              <span>Te llamaremos pronto</span>
+            </div>
+          </div>
+
+          <div className="gracias-actions">
+            <a href="index.html" className="gracias-btn primary">Volver al inicio</a>
+            <a href="sucursales.html" className="gracias-btn secondary">Ver sucursales</a>
+          </div>
+
+          {curlData && (
+            <div className="gracias-debug">
+              <details>
+                <summary>Información técnica de la solicitud</summary>
+                <div className="debug-content">
+                  <h3>Comando cURL enviado:</h3>
+                  <pre className="curl-code">{curlData.curl}</pre>
+                  
+                  <h3>Datos enviados:</h3>
+                  <pre className="json-code">{JSON.stringify(curlData.data.requestBody, null, 2)}</pre>
+                </div>
+              </details>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <style>{`
+        .gracias-hero {
+          min-height: calc(100vh - var(--nav-h, 80px) - 400px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 80px 0;
+          background: linear-gradient(180deg, #f8f8f8 0%, #fff 100%);
+        }
+
+        .gracias-container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 0 var(--container-pad, 40px);
+          text-align: center;
+        }
+
+        .gracias-icon {
+          margin: 0 auto 32px;
+          display: inline-block;
+          animation: checkmark-appear 0.6s ease-out;
+        }
+
+        @keyframes checkmark-appear {
+          0% {
+            opacity: 0;
+            transform: scale(0.5);
+          }
+          50% {
+            transform: scale(1.1);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        .gracias-title {
+          font-family: 'Montserrat', sans-serif;
+          font-size: 42px;
+          font-weight: 700;
+          color: #1A1A1A;
+          margin: 0 0 24px;
+          animation: fade-in-up 0.6s ease-out 0.2s both;
+        }
+
+        .gracias-message {
+          font-size: 18px;
+          line-height: 1.6;
+          color: #666;
+          margin: 0 0 48px;
+          animation: fade-in-up 0.6s ease-out 0.3s both;
+        }
+
+        @keyframes fade-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .gracias-info {
+          display: flex;
+          gap: 32px;
+          justify-content: center;
+          margin-bottom: 48px;
+          animation: fade-in-up 0.6s ease-out 0.4s both;
+        }
+
+        .gracias-info-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .gracias-info-item span {
+          font-size: 14px;
+          color: #333;
+          font-weight: 500;
+        }
+
+        .gracias-actions {
+          display: flex;
+          gap: 16px;
+          justify-content: center;
+          flex-wrap: wrap;
+          animation: fade-in-up 0.6s ease-out 0.5s both;
+        }
+
+        .gracias-btn {
+          padding: 14px 32px;
+          border-radius: 4px;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 15px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: all 200ms;
+          display: inline-block;
+        }
+
+        .gracias-btn.primary {
+          background: #E8490C;
+          color: #fff;
+        }
+
+        .gracias-btn.primary:hover {
+          background: #C73C0A;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(232, 73, 12, 0.3);
+        }
+
+        .gracias-btn.secondary {
+          background: #fff;
+          color: #E8490C;
+          border: 2px solid #E8490C;
+        }
+
+        .gracias-btn.secondary:hover {
+          background: #FFF5F2;
+          transform: translateY(-2px);
+        }
+
+        .gracias-debug {
+          margin-top: 60px;
+          width: 100%;
+        }
+
+        .gracias-debug details {
+          background: #f8f8f8;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          padding: 20px;
+        }
+
+        .gracias-debug summary {
+          cursor: pointer;
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 600;
+          font-size: 14px;
+          color: #666;
+          user-select: none;
+        }
+
+        .gracias-debug summary:hover {
+          color: #E8490C;
+        }
+
+        .debug-content {
+          margin-top: 20px;
+        }
+
+        .debug-content h3 {
+          font-family: 'Montserrat', sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          color: #333;
+          margin: 16px 0 8px;
+        }
+
+        .debug-content h3:first-child {
+          margin-top: 0;
+        }
+
+        .curl-code,
+        .json-code {
+          background: #1e1e1e;
+          color: #d4d4d4;
+          padding: 16px;
+          border-radius: 4px;
+          overflow-x: auto;
+          font-family: 'Courier New', monospace;
+          font-size: 12px;
+          line-height: 1.6;
+          white-space: pre-wrap;
+          word-break: break-all;
+        }
+
+        @media (max-width: 767px) {
+          .gracias-hero {
+            padding: 60px 0;
+          }
+
+          .gracias-title {
+            font-size: 32px;
+          }
+
+          .gracias-message {
+            font-size: 16px;
+          }
+
+          .gracias-info {
+            flex-direction: column;
+            gap: 24px;
+          }
+
+          .gracias-actions {
+            flex-direction: column;
+            gap: 12px;
+          }
+
+          .gracias-btn {
+            width: 100%;
+          }
+
+          .curl-code,
+          .json-code {
+            font-size: 11px;
+          }
+        }
+      `}</style>
+    </>
+  );
+};
+
+const App = () => {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (window.bloomreachService) {
+      window.bloomreachService.initBloomreach();
+      window.bloomreachService.trackEvent("page_visit", {
+        page: "gracias",
+        url: window.location.href,
+        title: document.title,
+      });
+    }
+  }, []);
+
+  return (
+    <div className="app" data-vp={tweaks.viewport}>
+      <Navbar onOpenMenu={() => setMenuOpen(true)} dark={false} />
+
+      <GraciasPage />
+
+      <Footer />
+
+      <MegaMenu open={menuOpen} onClose={() => setMenuOpen(false)} initialState="initial" />
+
+      {window.TweaksPanel && (
+        <TweaksPanel title="Tweaks">
+          <TweakSection title="Viewport">
+            <TweakRadio
+              label="Tamaño de pantalla"
+              value={tweaks.viewport}
+              options={[{ label: "Desktop", value: "desktop" }, { label: "Mobile", value: "mobile" }]}
+              onChange={(v) => setTweak('viewport', v)}
+            />
+          </TweakSection>
+        </TweaksPanel>
+      )}
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cotizador - SOUEAST Chile</title>
+
+<!-- Bundler thumbnail -->
+<template id="__bundler_thumbnail" data-bg-color="#f8f8f8">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <!-- Orange gradient background -->
+    <defs>
+      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#E8490C;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#C73C0A;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    <rect x="120" y="120" width="960" height="560" rx="24" fill="url(#grad)"/>
+    <!-- Form icon -->
+    <g transform="translate(600, 400)">
+      <rect x="-120" y="-140" width="240" height="40" rx="8" fill="rgba(255,255,255,0.3)"/>
+      <rect x="-120" y="-80" width="240" height="40" rx="8" fill="rgba(255,255,255,0.3)"/>
+      <rect x="-120" y="-20" width="240" height="40" rx="8" fill="rgba(255,255,255,0.3)"/>
+      <rect x="-120" y="60" width="240" height="50" rx="8" fill="#fff"/>
+      <text x="0" y="93" text-anchor="middle" font-family="Montserrat, sans-serif" font-size="24" font-weight="700" fill="#E8490C">COTIZAR</text>
+    </g>
+  </svg>
+</template>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/tokens.css">
+
+<style>
+  html, body { background: var(--color-ink); }
+  .app {
+    background: #fff;
+    min-height: 100vh;
+    margin: 0 auto;
+    transition: max-width 280ms var(--ease-out), box-shadow 280ms;
+  }
+  .app[data-vp="desktop"] { max-width: 100%; }
+  .app[data-vp="mobile"] {
+    max-width: 420px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.5);
+    --container-pad: 20px;
+    --fs-section: 22px;
+    --fs-h2: 24px;
+    --fs-eyebrow: 18px;
+    --fs-hero: 22px;
+    --fs-h3: 20px;
+    --fs-h4: 18px;
+    --fs-h5: 16px;
+    --nav-h: 56px;
+  }
+  .app[data-vp="mobile"] .nav-links { display: none !important; }
+  .app[data-vp="mobile"] .nav-right a:nth-child(3),
+  .app[data-vp="mobile"] .nav-right span { display: none !important; }
+  .app[data-vp="mobile"] .nav-right a { font-size: 13px; }
+  .app[data-vp="mobile"] .ft__cols { grid-template-columns: 1fr !important; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<!-- App config -->
+<script>
+  window.__APP_CONFIG = {
+    APIMAZ_SUBSCRIPTION_KEY: "7c9926ce2e1646538d6e2f0090910004",
+    STRAPI_URL: "http://localhost:1337",
+    STRAPI_TOKEN: ""
+  };
+
+  // Configuración del cotizador embebida
+  window.COTIZADOR_CONFIG = {
+    API_KEY: "6f6695354e7b4bd783aa6ea2e0e7cc15",
+    API_URL: "https://apimazqa.grupokaufmann.com/qas/crm/oportunidad/v1/cotizador/web/async",
+    vCategoria: "M1_AS_",
+    vOrigen: "Z11K",
+    vCrearCaso: "1",
+    vClaseOperacion: "ZSMD",
+    vLineaNegocio: "01",
+    vCampana: "CLAM_AU_0000005369",
+    vDescripcion: "Cotización Prueba",
+    vPais: "CL",
+    MODELOS: ["S06", "S06 PHEV", "S07", "S09"]
+  };
+</script>
+
+<!-- Servicios compartidos -->
+<script src="shared/services/env.js"></script>
+<script src="shared/services/bloomreachService.js"></script>
+
+<!-- Data -->
+<script src="shared/data/regiones-comunas.js"></script>
+<script src="shared/data/sucursales-crm.js"></script>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Tweaks helper -->
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<!-- Shared components -->
+<script type="text/babel" src="shared/components/Icons.jsx"></script>
+<script type="text/babel" src="shared/components/Logo.jsx"></script>
+<script type="text/babel" src="shared/components/CTA.jsx"></script>
+<script type="text/babel" src="shared/components/Navbar.jsx"></script>
+<script type="text/babel" src="shared/components/MegaMenu.jsx"></script>
+<script type="text/babel" src="shared/components/Footer.jsx"></script>
+
+<!-- App -->
+<script type="text/babel" data-presets="env,react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "viewport": "desktop"
+}/*EDITMODE-END*/;
+
+const CotizadorPage = () => {
+  const [formData, setFormData] = React.useState({
+    nombre: '',
+    apellido: '',
+    rut: '',
+    email: '',
+    telefono: '',
+    comuna: '',
+    sucursal: '',
+    modelo: '',
+    privacidad: false
+  });
+
+  const [errors, setErrors] = React.useState({});
+  const [sucursales, setSucursales] = React.useState([]);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState(null);
+
+  // Obtener modelo de URL si viene de otra página
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const modeloParam = params.get('modelo');
+    if (modeloParam) {
+      setFormData(prev => ({ ...prev, modelo: modeloParam }));
+    }
+  }, []);
+
+  // Actualizar sucursales cuando cambia comuna
+  React.useEffect(() => {
+    if (formData.comuna && window.getSucursalesPorComuna) {
+      const sucs = window.getSucursalesPorComuna(formData.comuna);
+      setSucursales(sucs);
+      setFormData(prev => ({ ...prev, sucursal: '' }));
+    }
+  }, [formData.comuna]);
+
+  const handleChange = (field, value) => {
+    let processedValue = value;
+    
+    // Validación especial para RUT: solo números y k/K para dígito verificador
+    if (field === 'rut') {
+      // Permitir solo números, puntos, guiones y k/K
+      processedValue = value.replace(/[^0-9kK.\-]/g, '');
+    }
+    
+    // Validación especial para teléfono: solo números, máximo 9 dígitos
+    if (field === 'telefono') {
+      // Remover todo lo que no sea número
+      processedValue = value.replace(/\D/g, '');
+      // Limitar a 9 dígitos
+      if (processedValue.length > 9) {
+        processedValue = processedValue.slice(0, 9);
+      }
+    }
+    
+    setFormData(prev => ({ ...prev, [field]: processedValue }));
+    // Limpiar error del campo cuando el usuario lo modifica
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateRUT = (rut) => {
+    // Validación básica de RUT chileno
+    const cleaned = rut.replace(/[^0-9kK]/g, '');
+    if (cleaned.length < 8) return false;
+    
+    const body = cleaned.slice(0, -1);
+    const dv = cleaned.slice(-1).toLowerCase();
+    
+    let sum = 0;
+    let multiplier = 2;
+    
+    for (let i = body.length - 1; i >= 0; i--) {
+      sum += parseInt(body[i]) * multiplier;
+      multiplier = multiplier === 7 ? 2 : multiplier + 1;
+    }
+    
+    const expectedDV = 11 - (sum % 11);
+    const dvChar = expectedDV === 11 ? '0' : expectedDV === 10 ? 'k' : expectedDV.toString();
+    
+    return dvChar === dv;
+  };
+
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const validatePhone = (phone) => {
+    const cleaned = phone.replace(/\D/g, '');
+    return cleaned.length === 9;
+  };
+
+  const validate = () => {
+    const newErrors = {};
+
+    if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
+    if (!formData.apellido.trim()) newErrors.apellido = 'El apellido es requerido';
+    
+    if (!formData.rut.trim()) {
+      newErrors.rut = 'El RUT es requerido';
+    } else if (!validateRUT(formData.rut)) {
+      newErrors.rut = 'El RUT no es válido';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'El email es requerido';
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'El email no es válido';
+    }
+    
+    if (!formData.telefono.trim()) {
+      newErrors.telefono = 'El teléfono es requerido';
+    } else if (!validatePhone(formData.telefono)) {
+      newErrors.telefono = 'El teléfono debe tener exactamente 9 dígitos';
+    }
+    
+    if (!formData.comuna) newErrors.comuna = 'Selecciona una comuna';
+    if (!formData.sucursal) newErrors.sucursal = 'Selecciona una sucursal';
+    if (!formData.modelo) newErrors.modelo = 'Selecciona un modelo';
+    if (!formData.privacidad) newErrors.privacidad = 'Debes aceptar las políticas de privacidad';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const buildRequestBody = () => {
+    const config = window.COTIZADOR_CONFIG;
+    const codigoCRM = window.getCodigoCRMPorSucursal(formData.sucursal);
+    const timestamp = Date.now();
+
+    return {
+      IvCategorizacion: `${config.vCategoria}${codigoCRM}`,
+      IvTimestamp: timestamp,
+      IvOrigen: config.vOrigen,
+      IvEmail: formData.email,
+      IvTelefonoMovil: formData.telefono,
+      IvCrearCaso: config.vCrearCaso,
+      IvModelo: formData.modelo,
+      IvUrl: window.location.origin,
+      json: {
+        sucursalNombre: formData.sucursal,
+        Movil: formData.telefono,
+        rutEmpresa: "",
+        nombre: formData.nombre,
+        modelo: formData.modelo,
+      },
+      IvNumClasFiscal: formData.rut,
+      IvSucursal: formData.sucursal,
+      IvClaseOperacion: config.vClaseOperacion,
+      IvApellidoCliente: formData.apellido,
+      IvLineaNegocio: config.vLineaNegocio,
+      IvTelefonoFijo: "",
+      IvCampana: config.vCampana,
+      IvNota: `${formData.email}||Celular:${formData.telefono}||NombreCliente:${formData.nombre} ||ApellidoCliente:${formData.apellido}|| Modelo: ${formData.modelo}`,
+      IvRutEmpresa: "",
+      IvNombreCliente: formData.nombre,
+      IvCarterizacion: "",
+      IvDescripcion: config.vDescripcion,
+      IvCategoria: config.vCategoria,
+      IvPais: config.vPais
+    };
+  };
+
+  const buildCurlCommand = (body) => {
+    const config = window.COTIZADOR_CONFIG;
+    return `curl --location '${config.API_URL}' \\
+--header 'Accept: application/json' \\
+--header 'Content-Type: application/json' \\
+--header 'Ocp-Apim-Subscription-Key: ${config.API_KEY}' \\
+--data-raw '${JSON.stringify(body, null, 2)}'`;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitError(null);
+
+    if (!validate()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const body = buildRequestBody();
+      const config = window.COTIZADOR_CONFIG;
+
+      const response = await fetch(config.API_URL, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Ocp-Apim-Subscription-Key': config.API_KEY
+        },
+        body: JSON.stringify(body)
+      });
+
+      // Si está en rango 200, guardar info y ir a página de gracias
+      if (response.ok) {
+        // Guardar curl y datos del request en localStorage
+        const curlCommand = buildCurlCommand(body);
+        localStorage.setItem('cotizacion_curl', curlCommand);
+        localStorage.setItem('cotizacion_data', JSON.stringify({
+          timestamp: new Date().toISOString(),
+          formData: formData,
+          requestBody: body
+        }));
+        
+        window.location.href = 'gracias.html';
+      } else {
+        // Mostrar el curl en caso de error
+        const curl = buildCurlCommand(body);
+        setSubmitError({
+          status: response.status,
+          statusText: response.statusText,
+          curl: curl
+        });
+      }
+    } catch (error) {
+      const body = buildRequestBody();
+      const curl = buildCurlCommand(body);
+      setSubmitError({
+        status: 'ERROR',
+        statusText: error.message,
+        curl: curl
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <>
+      <section className="cotizador-hero">
+        <div className="cotizador-container">
+          <h1 className="cotizador-title">Cotiza tu SOUEAST</h1>
+          <p className="cotizador-subtitle">Completa el formulario y nos pondremos en contacto contigo</p>
+        </div>
+      </section>
+
+      <section className="cotizador-form-section">
+        <div className="cotizador-container">
+          <form className="cotizador-form" onSubmit={handleSubmit}>
+            
+            {/* Datos Personales */}
+            <div className="form-group">
+              <label className="form-label">Nombre *</label>
+              <input
+                type="text"
+                className={`form-input ${errors.nombre ? 'error' : ''}`}
+                value={formData.nombre}
+                onChange={(e) => handleChange('nombre', e.target.value)}
+                placeholder="Ingresa tu nombre"
+              />
+              {errors.nombre && <span className="form-error">{errors.nombre}</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Apellido *</label>
+              <input
+                type="text"
+                className={`form-input ${errors.apellido ? 'error' : ''}`}
+                value={formData.apellido}
+                onChange={(e) => handleChange('apellido', e.target.value)}
+                placeholder="Ingresa tu apellido"
+              />
+              {errors.apellido && <span className="form-error">{errors.apellido}</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">RUT *</label>
+              <input
+                type="text"
+                className={`form-input ${errors.rut ? 'error' : ''}`}
+                value={formData.rut}
+                onChange={(e) => handleChange('rut', e.target.value)}
+                placeholder="12.345.678-9"
+              />
+              {errors.rut && <span className="form-error">{errors.rut}</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Email *</label>
+              <input
+                type="email"
+                className={`form-input ${errors.email ? 'error' : ''}`}
+                value={formData.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                placeholder="tu@email.com"
+              />
+              {errors.email && <span className="form-error">{errors.email}</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Teléfono *</label>
+              <input
+                type="tel"
+                className={`form-input ${errors.telefono ? 'error' : ''}`}
+                value={formData.telefono}
+                onChange={(e) => handleChange('telefono', e.target.value)}
+                placeholder="912345678"
+                maxLength={9}
+              />
+              {errors.telefono && <span className="form-error">{errors.telefono}</span>}
+            </div>
+
+            {/* Ubicación */}
+            <div className="form-group">
+              <label className="form-label">Comuna *</label>
+              <select
+                className={`form-input ${errors.comuna ? 'error' : ''}`}
+                value={formData.comuna}
+                onChange={(e) => handleChange('comuna', e.target.value)}
+              >
+                <option value="">Selecciona una comuna</option>
+                {window.SUCURSALES_CRM && [...new Set(window.SUCURSALES_CRM.map(s => s.comuna))].sort().map(comuna => (
+                  <option key={comuna} value={comuna}>{comuna}</option>
+                ))}
+              </select>
+              {errors.comuna && <span className="form-error">{errors.comuna}</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Sucursal *</label>
+              <select
+                className={`form-input ${errors.sucursal ? 'error' : ''}`}
+                value={formData.sucursal}
+                onChange={(e) => handleChange('sucursal', e.target.value)}
+                disabled={!formData.comuna || sucursales.length === 0}
+              >
+                <option value="">Selecciona una sucursal</option>
+                {sucursales.map(suc => (
+                  <option key={suc.sucursal} value={suc.sucursal}>{suc.sucursal}</option>
+                ))}
+              </select>
+              {errors.sucursal && <span className="form-error">{errors.sucursal}</span>}
+              {formData.comuna && sucursales.length === 0 && (
+                <span className="form-help">No hay sucursales disponibles en esta comuna</span>
+              )}
+            </div>
+
+            {/* Modelo */}
+            <div className="form-group">
+              <label className="form-label">Modelo *</label>
+              <select
+                className={`form-input ${errors.modelo ? 'error' : ''}`}
+                value={formData.modelo}
+                onChange={(e) => handleChange('modelo', e.target.value)}
+              >
+                <option value="">Selecciona un modelo</option>
+                {window.COTIZADOR_CONFIG && window.COTIZADOR_CONFIG.MODELOS.map(modelo => (
+                  <option key={modelo} value={modelo}>{modelo}</option>
+                ))}
+              </select>
+              {errors.modelo && <span className="form-error">{errors.modelo}</span>}
+            </div>
+
+            {/* Políticas de privacidad */}
+            <div className="form-group">
+              <label className={`form-checkbox ${errors.privacidad ? 'error' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={formData.privacidad}
+                  onChange={(e) => handleChange('privacidad', e.target.checked)}
+                />
+                <span>
+                  Acepto las <a href="https://soueastchile.cl/legales" target="_blank" rel="noopener noreferrer">políticas de privacidad</a> *
+                </span>
+              </label>
+              {errors.privacidad && <span className="form-error">{errors.privacidad}</span>}
+            </div>
+
+            {/* Error de envío */}
+            {submitError && (
+              <div className="submit-error">
+                <h4>Error al enviar cotización</h4>
+                <p>Status: {submitError.status} - {submitError.statusText}</p>
+                <details>
+                  <summary>Ver comando curl</summary>
+                  <pre>{submitError.curl}</pre>
+                </details>
+              </div>
+            )}
+
+            {/* Botón de envío */}
+            <button
+              type="submit"
+              className="form-submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Enviando...' : 'Enviar Cotización'}
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <style>{`
+        .cotizador-hero {
+          background: linear-gradient(135deg, #E8490C 0%, #C73C0A 100%);
+          padding: 60px 0;
+          text-align: center;
+        }
+        .cotizador-container {
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 0 var(--container-pad, 40px);
+        }
+        .cotizador-title {
+          font-family: 'Montserrat', sans-serif;
+          font-size: 42px;
+          font-weight: 700;
+          color: #fff;
+          margin: 0 0 12px;
+        }
+        .cotizador-subtitle {
+          font-size: 18px;
+          color: rgba(255,255,255,0.9);
+          margin: 0;
+        }
+
+        .cotizador-form-section {
+          padding: 60px 0;
+          background: #f8f8f8;
+        }
+        .cotizador-form {
+          background: #fff;
+          padding: 48px;
+          border-radius: 8px;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .form-group {
+          margin-bottom: 24px;
+        }
+        .form-label {
+          display: block;
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 600;
+          font-size: 14px;
+          color: #333;
+          margin-bottom: 8px;
+        }
+        .form-input {
+          width: 100%;
+          padding: 12px 16px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 15px;
+          font-family: 'Open Sans', sans-serif;
+          transition: border-color 200ms;
+        }
+        .form-input:focus {
+          outline: none;
+          border-color: #E8490C;
+        }
+        .form-input:disabled {
+          background: #f5f5f5;
+          cursor: not-allowed;
+        }
+        .form-input.error {
+          border-color: #d32f2f;
+        }
+        .form-error {
+          display: block;
+          font-size: 13px;
+          color: #d32f2f;
+          margin-top: 4px;
+        }
+        .form-help {
+          display: block;
+          font-size: 13px;
+          color: #666;
+          margin-top: 4px;
+          font-style: italic;
+        }
+
+        .form-checkbox {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          cursor: pointer;
+          font-size: 14px;
+          color: #333;
+        }
+        .form-checkbox input[type="checkbox"] {
+          margin-top: 2px;
+          width: 18px;
+          height: 18px;
+          cursor: pointer;
+          flex-shrink: 0;
+        }
+        .form-checkbox a {
+          color: #E8490C;
+          text-decoration: none;
+        }
+        .form-checkbox a:hover {
+          text-decoration: underline;
+        }
+        .form-checkbox.error {
+          color: #d32f2f;
+        }
+
+        .submit-error {
+          background: #fff5f5;
+          border: 1px solid #ffcdd2;
+          border-radius: 4px;
+          padding: 20px;
+          margin-bottom: 24px;
+        }
+        .submit-error h4 {
+          margin: 0 0 8px;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 16px;
+          color: #c62828;
+        }
+        .submit-error p {
+          margin: 0 0 12px;
+          font-size: 14px;
+          color: #666;
+        }
+        .submit-error details {
+          margin-top: 12px;
+        }
+        .submit-error summary {
+          cursor: pointer;
+          color: #E8490C;
+          font-weight: 600;
+          font-size: 13px;
+          margin-bottom: 8px;
+        }
+        .submit-error pre {
+          background: #f5f5f5;
+          padding: 12px;
+          border-radius: 4px;
+          overflow-x: auto;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        .form-submit {
+          width: 100%;
+          background: #E8490C;
+          color: #fff;
+          border: none;
+          padding: 16px 32px;
+          border-radius: 4px;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 200ms;
+        }
+        .form-submit:hover {
+          background: #C73C0A;
+        }
+        .form-submit:disabled {
+          background: #ccc;
+          cursor: not-allowed;
+        }
+
+        @media (max-width: 767px) {
+          .cotizador-title {
+            font-size: 32px;
+          }
+          .cotizador-subtitle {
+            font-size: 16px;
+          }
+          .cotizador-form {
+            padding: 32px 24px;
+          }
+        }
+      `}</style>
+    </>
+  );
+};
+
+const App = () => {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (window.bloomreachService) {
+      window.bloomreachService.initBloomreach();
+      window.bloomreachService.trackEvent("page_visit", {
+        page: "cotizador",
+        url: window.location.href,
+        title: document.title,
+      });
+    }
+  }, []);
+
+  return (
+    <div className="app" data-vp={tweaks.viewport}>
+      <Navbar onOpenMenu={() => setMenuOpen(true)} dark={false} />
+
+      <CotizadorPage />
+
+      <Footer />
+
+      <MegaMenu open={menuOpen} onClose={() => setMenuOpen(false)} initialState="initial" />
+
+      {window.TweaksPanel && (
+        <TweaksPanel title="Tweaks">
+          <TweakSection title="Viewport">
+            <TweakRadio
+              label="Tamaño de pantalla"
+              value={tweaks.viewport}
+              options={[{ label: "Desktop", value: "desktop" }, { label: "Mobile", value: "mobile" }]}
+              onChange={(v) => setTweak('viewport', v)}
+            />
+          </TweakSection>
+        </TweaksPanel>
+      )}
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body>
+</html>

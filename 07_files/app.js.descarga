@@ -1,0 +1,848 @@
+let checkDevice = () => {
+    let device = $(window).width() > 768 ? 'desktop' : 'mobile';
+    return device;
+};
+/*-----------------------------FUNCTION TO DELETE ELEMENTS MOBILE OR DESKTOP-----------------------------*/
+const deleteElement = (element) => {
+  if(element.length == 0) return;
+  
+  element.remove();
+};
+
+$(document).ready(()=>{
+  let stayInDesktop = $('.se-js-just-in-desktop'),
+    stayInMobile = $('.se-js-just-in-mobile'),
+    toDelete = checkDevice() == 'mobile' ? stayInDesktop : stayInMobile;
+  
+  deleteElement(toDelete);
+});
+/*----------------------------END FUNCTION TO DELETE ELEMENTS MOBILE OR DESKTOP----------------------------*/
+/*-----------------------------------------------VIDEO FUNCTIONS-----------------------------------------------*/
+/* ------------------------------------- PLYR + SWIPER VIDEO CONTROL ------------------------------------- */
+let players = [];
+let playersByRealIndex = new Map();
+let currentSwiper = null;
+
+// helpers
+let getPlyr = ($node) => ($node.data('plyr') || ($node[0] && $node[0].plyr) || null);
+
+// determina si un nodo está dentro de un Swiper (no tocar lógica de Swiper)
+let isInsideSwiperNode = (node) => !!$(node).closest('.swiper, .swiper-container, .swiper-wrapper').length;
+
+let ensureMuted = (player) => {
+  if(!player) return;
+  try { player.muted = true; } catch(e){}
+  try { player.volume = 0; } catch(e){}
+  if (player.provider === 'youtube' && player.embed) {
+    try { player.embed.mute && player.embed.mute(); } catch(e){}
+  }
+};
+
+let safePlay = (player) => {
+  if(!player) return;
+  try {
+    let p = player.play && player.play();
+    if (p && typeof p.then === 'function') p.catch(()=>{});
+  } catch(e){}
+};
+
+let safePause = (player) => {
+  if(!player) return;
+  try { player.pause && player.pause(); } catch(e){}
+  if (player.provider === 'youtube' && player.embed) {
+    try { player.embed.pauseVideo && player.embed.pauseVideo(); } catch(e){}
+    try { player.embed.stopVideo && player.embed.stopVideo(); } catch(e){}
+    ensureMuted(player);
+  }
+};
+
+const findActiveVideo = (slide) => {
+  setTimeout(() => {
+    let $slide = $(slide),
+        slideActive = $slide.find('.swiper-slide-active'),
+        hasVideo = slideActive.find('.plyr').length > 0,
+        // ojo: buscamos SOLO dentro del activo
+        $visiblePlyr = slideActive.find('.plyr:visible'),
+        $allPlyr = $slide.find('.plyr');
+
+    // 1) pausamos todo lo que exista en el carrusel
+    $allPlyr.each((i, el) => {
+      let player = getPlyr($(el));
+      safePause(player);
+    });
+
+    // 2) si el activo tiene video visible, reproducimos ese
+    if (hasVideo && $visiblePlyr.length) {
+      let $target = $visiblePlyr.eq(0);
+      let player = getPlyr($target);
+
+      if (player) {
+        ensureMuted(player);
+        setTimeout(() => safePlay(player), 50); // YT suele necesitar un pelito
+        // loop reforzado para YT (evita duplicados)
+        if (!player._loopAttached) {
+          player.on && player.on('ended', () => safePlay(player));
+          player._loopAttached = true;
+        }
+        // permitir autoplay en iframe YT
+        let iframe = $target.find('iframe')[0];
+        if (iframe) {
+          let allow = iframe.getAttribute('allow') || '';
+          if (!/autoplay/.test(allow)) iframe.setAttribute('allow', `${allow}; autoplay`);
+        }
+      }
+    }
+  }, 600);
+};
+/* ----------------------------------- FIN: PLYR + SWIPER VIDEO CONTROL ---------------------------------- */
+
+/*--------------------------------------- INIT PLYR VIDEOS (UNIFICADO) ---------------------------------------*/
+let initPlyrVideos = (containerSelector = '.se-c-banner-media') => {
+  let $container = $(containerSelector);
+  if ($container.length === 0) return players;
+
+  // ahora siempre parte desde <video class="se-o-video" url="...">
+  let $videos = $container.find('video.se-o-video'),
+      plyrOptions = {
+        clickToPlay: false,
+        muted: true,
+        autoplay: false,    // lo controlas con findActiveVideo()
+        autopause: false,
+        loop: { active: true },
+        youtube: { rel: 0, modestbranding: 1, playsinline: 1, noCookie: true }
+      },
+      isYT = (u) => /(youtube\.com|youtu\.be)/i.test(u || ''),
+      getId = (u) => (u.match(/shorts\/([\w-]{6,})/)||u.match(/[?&]v=([\w-]{6,})/)||u.match(/youtu\.be\/([\w-]{6,})/)||u.match(/embed\/([\w-]{6,})/)||[])[1] || '',
+      guessMime = (u) => {
+        let ext = (u||'').split('?')[0].split('#')[0].split('.').pop()?.toLowerCase();
+        if(ext==='mp4') return 'video/mp4';
+        if(ext==='webm') return 'video/webm';
+        if(ext==='ogv'||ext==='ogg') return 'video/ogg';
+        return '';
+      };
+
+  $videos.each(function(i){
+    let $el = $(this),
+        url = $el.attr('url') || $el.data('url') || '',
+        posterAttr = $el.attr('poster') || $el.data('poster') || '',
+        uid = `video-${i}`;
+
+    $el.attr('id', uid);
+
+    if (isYT(url)) {
+      let ytId = getId(url),
+          poster = posterAttr || (ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : '');
+
+      // reemplaza <video> por el contenedor que espera Plyr para YT, con poster unificado
+      let $yt = $(
+        `<div id="${uid}" class="se-o-video" data-plyr-provider="youtube" data-plyr-embed-id="${ytId}" ${poster?`data-poster="${poster}"`:''}></div>`
+      );
+
+      $el.replaceWith($yt);
+
+      let player = new Plyr(`#${uid}`, {
+        ...plyrOptions,
+        youtube: { ...plyrOptions.youtube, loop: 1, playlist: ytId }
+      });
+
+      player.on('ready', () => {
+        ensureMuted(player);
+        // asegurar poster también vía API
+        try { if (poster) player.poster = poster; } catch(e){}
+        // guarda la instancia en el wrapper .plyr para que .plyr:visible -> data('plyr') funcione
+        try { $(player.elements.container).data('plyr', player); } catch(e){}
+        // permitir autoplay
+        let iframe = document.querySelector(`#${uid} iframe`);
+        if (iframe) {
+          let allow = iframe.getAttribute('allow') || '';
+          if (!/autoplay/.test(allow)) iframe.setAttribute('allow', `${allow}; autoplay`);
+        }
+        // reproducir automáticamente si NO está dentro de Swiper
+        if (!isInsideSwiperNode(player.elements.container)) {
+          setTimeout(() => safePlay(player), 50);
+        }
+      });
+
+      $yt.data('plyr', player);
+      players.push(player);
+
+    } else {
+      // archivo HTML5: mantenemos el <video> original, inyectamos <source> si falta y usamos poster si viene
+      if ($el.find('source').length === 0 && url) {
+        let mime = guessMime(url);
+        $el.append(`<source src="${url}" ${mime?`type="${mime}"`:''}>`);
+      }
+      if (posterAttr) $el.attr('poster', posterAttr);
+      $el.attr({'playsinline':'', 'muted':'', 'preload':'none'});
+
+      let player = new Plyr($el[0], plyrOptions);
+
+      player.on('ready', () => {
+        ensureMuted(player);
+        // guarda también en el wrapper .plyr (Plyr envuelve al <video>)
+        try { $(player.elements.container).data('plyr', player); } catch(e){}
+        // reproducir automáticamente si NO está dentro de Swiper
+        if (!isInsideSwiperNode(player.elements.container)) {
+          setTimeout(() => safePlay(player), 50);
+        }
+      });
+
+      $el.data('plyr', player);
+      players.push(player);
+    }
+  });
+
+  return players;
+};
+
+$(document).ready(() => {
+  players = initPlyrVideos('.se-c-banner-media');
+});
+
+/*---------------------------------------------END VIDEO FUNCTIONS---------------------------------------------*/
+
+/* ------------------- AUTOPLAY POR VISIBILIDAD (fuera de Swiper) ------------------- */
+$(document).ready(()=>{
+
+  // ¿Está dentro de un swiper?
+  let isInsideSwiper = (el) => !!$(el).closest('.swiper, .swiper-container, .swiper-wrapper').length;
+  
+  // Obtiene el wrapper .plyr desde un nodo cualquiera (.plyr o su contenedor)
+  let getPlyrWrapper = (node) => {
+    let $n = $(node);
+    if ($n.hasClass('plyr')) return $n;
+    let $inner = $n.find('.plyr').eq(0);
+    return $inner.length ? $inner : $n;
+  };
+  
+  // Observa .plyr visibles fuera de Swiper y controla play/pause
+  let initViewportAutoplay = (scopeSelector = 'body', opts = {}) => {
+    let $scope = $(scopeSelector);
+    if (!$scope.length) return;
+  
+    let threshold = opts.threshold || 0.6; // 60% visible
+    let rootMargin = opts.rootMargin || '0px';
+  
+    // Recolecta TODOS los .plyr inicializados fuera de swiper
+    let $targets = $scope.find('.plyr').filter((i, el) => !isInsideSwiper(el));
+    if (!$targets.length) return;
+  
+    // Nota: eliminamos las pausas automáticas; solo reproducimos cuando corresponda
+  
+    let io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        let el = entry.target;
+        let player = getPlyr($(el));
+        if (!player) return;
+  
+        if (entry.isIntersecting && entry.intersectionRatio >= threshold) {
+          // Reproduce cuando sea visible, sin pausar otros
+          ensureMuted(player);
+          setTimeout(() => safePlay(player), 50);
+          if (!player._loopAttached && player.on) {
+            player.on('ended', () => safePlay(player));
+            player._loopAttached = true;
+          }
+          // asegurar allow=autoplay si es YT
+          let iframe = $(el).find('iframe')[0];
+          if (iframe) {
+            let allow = iframe.getAttribute('allow') || '';
+            if (!/autoplay/.test(allow)) iframe.setAttribute('allow', `${allow}; autoplay`);
+          }
+          // una vez que ya lo activamos, podemos dejar de observar si no se requiere más control
+          // io.unobserve(el);
+        }
+      });
+    }, { threshold: [0, threshold, 1], rootMargin });
+  
+    // Empieza a observar cada .plyr
+    $targets.each((i, el) => io.observe(el));
+    
+    // Devuelve una API simple por si luego quieres limpiar
+    return {
+      disconnect: () => io.disconnect(),
+      observer: io
+    };
+  };
+  
+  players = initPlyrVideos('.se-c-banner-media'); // tu init actual
+    // Autoplay por visibilidad sólo para videos fuera de Swiper
+  initViewportAutoplay('body', { threshold: 1, rootMargin: '100px' });
+});
+
+/*----------------------------------------- FUNCTION TO CREATE SLIDES -----------------------------------------*/
+const createSwiper = (element) => {
+    let $element = element,
+        elementId = $element.attr('id'),
+        slideSelector = `#${elementId}`,
+        auto = $element.data('auto') || false,
+        loop = $element.data('loop') || false,
+        stopHover = ($element.data('stop-hover') && $element.data('stop-hover') !== undefined) ? $element.data('stop-hover') : false,
+        speed = $element.data('speed') || 2500,
+        space = $element.data('space') || 0,
+        centered = $element.data('centered') || false,
+        elementsMobile = $element.data('slides-mobile') || 1,
+        elementsDesktop = $element.data('slides-desktop') || 1,
+        $pagination = $element.parent().find('.swiper-pagination') || $(`${elementId}-pagination`),
+        $scrollBar = $element.parent().find('.swiper-scrollbar'),
+        $navPrev = $element.parent().find('.swiper-button-prev'),
+        $navNext = $element.parent().find('.swiper-button-next'),
+        activePagination = $element.data('pagination') || false,
+        activeScrollBar = $element.data('scrollbar') || false,
+        activeNavs = $element.data('navs') || false,
+        autoH = $element.data('auto-height') || false,
+        isVertical = $element.data('vertical'),
+        isThumb = $element.hasClass('se-js-swiper-thumb'),
+        thumbId = $element.attr('thumb-id'),
+        $effect = $element.data('effect') || false;
+
+    $navPrev.toggleClass('d-none', !activeNavs);
+    $navNext.toggleClass('d-none', !activeNavs);
+    $pagination.toggleClass('d-none', !activePagination);
+    $scrollBar.toggleClass('d-none', !activeScrollBar);
+
+    if (activePagination) $pagination.addClass(`${elementId}-pagination`);
+    if (activeScrollBar)  $scrollBar.addClass(`${elementId}-scrollbar`);
+    if (activeNavs) {
+        $navPrev.addClass(`${elementId}-prev`);
+        $navNext.addClass(`${elementId}-next`);
+    }
+
+    let thumbsConfig = {};
+    if (thumbId) {
+        let thumbEl = document.getElementById(thumbId),
+            thumbSwiper = (thumbEl && thumbEl.swiper) || $(thumbEl).data('swiper') || null;
+        if (thumbSwiper) thumbsConfig = { thumbs: { swiper: thumbSwiper } };
+    }
+
+    let config = {
+        ...($effect ? {effect: $effect} : ''),
+        ...(isVertical ? { direction: 'vertical' } : { direction: 'horizontal' }),
+        slidesPerView: elementsMobile,
+        watchSlidesProgress: true,
+        loop: loop,
+        centeredSlides: centered,
+        spaceBetween: space,
+        autoHeight: autoH,
+        ...(auto ? {
+        autoplay: {
+            delay: speed,
+            disableOnInteraction: true,
+            pauseOnMouseEnter: stopHover
+        }
+        } : {}),
+        breakpoints: { 768: { slidesPerView: elementsDesktop } },
+        ...(activePagination ? { pagination: { el: `.${elementId}-pagination`, clickable: true } } : {}),
+        ...(activeNavs ? { navigation: { nextEl: `.${elementId}-next`, prevEl: `.${elementId}-prev`, clickable: true } } : {}),
+        ...(activeScrollBar ? { scrollbar: { el: `.${elementId}-scrollbar`, draggable: true } } : {}),
+
+        on: {
+            init: function(){
+                findActiveVideo(this.el);
+            },
+            slideChangeTransitionStart: function(){
+                // con que llames al final basta; si quieres cortar sonido altiro:
+                findActiveVideo(this.el);
+            },
+            slideChangeTransitionEnd: function(){
+                findActiveVideo(this.el);
+            }
+        }
+    };
+
+    if (isThumb) {
+        config.freeMode = true;
+        // config.watchSlidesProgress = true;
+        config.slideToClickedSlide = true;
+    }
+
+    config = { ...config, ...thumbsConfig };
+
+    let instance = new Swiper(slideSelector, config);
+    $element.data('swiper', instance);
+    return instance;
+};
+/*--------------------------------------- END FUNCTION TO CREATE SLIDES ---------------------------------------*/
+
+/*----------------------------------------- FUNCTION FOR AUTO SWIPERS -----------------------------------------*/
+$(document).ready(()=>{
+  let autoSwiper = $('.se-js-auto-swiper');
+  
+  if (autoSwiper.length > 0) {
+      autoSwiper.each(function () {
+          createSwiper($(this));
+      });
+  };
+});
+/*--------------------------------------- END FUNCTION FOR AUTO SWIPERS ---------------------------------------*/
+
+
+/*---------------------------------------------- THUMB SLIDER ------------------------------------------------*/
+$(document).ready(()=>{
+
+  let thumbSlider = $('.se-js-swiper-thumb');
+  
+  if (thumbSlider.length > 0) {
+      thumbSlider.each(function () {
+          let $thumb = $(this),
+              thumbId = $thumb.attr('id'),
+              parentId = $thumb.data('parent-thumb'),
+              $descs = $thumb.find('.se-c-slide-description'),
+              hasDesc = $descs.length > 0,
+              $wrap = $('<div class="se-c-slide-descriptions-wrap text-center d-none d-md-block"></div>');
+  
+          $thumb.after($wrap);
+  
+          let descRegistry = [];
+  
+          if (hasDesc) {
+              $descs.each(function () {
+                  descRegistry.push($(this).detach()); 
+              });
+          };
+  
+          $('#' + parentId)
+              .attr('thumbSlider', '')
+              .attr('thumb-id', thumbId);
+  
+          createSwiper($('#' + thumbId));
+          createSwiper($('#' + parentId));
+  
+          if (hasDesc) {
+              let $main = $('#' + parentId);
+              let mainSwiper = $main.data('swiper') || ($main[0] && $main[0].swiper);
+  
+              let renderDesc = (idx) => {
+                  $wrap.empty();
+                  let $node = descRegistry[idx] || null;
+                  if ($node) $wrap.append($node);
+              };
+  
+              // primera pintura (por si no parte en 0)
+              renderDesc(('realIndex' in mainSwiper) ? mainSwiper.realIndex : mainSwiper.activeIndex);
+  
+              mainSwiper.on('slideChange', () => {
+                  let idx = ('realIndex' in mainSwiper) ? mainSwiper.realIndex : mainSwiper.activeIndex;
+                  renderDesc(idx);
+              });
+          };
+      });
+  };
+});
+/*------------------------------------------------ END THUMB SLIDER ------------------------------------------*/
+
+/*--------------------------------------------- SCROLL TO -----------------------------------------*/
+$(document).ready(() => {
+  let scrollTo = (duration = 600, element) => {
+    let $element = (element === undefined || element === 'top') ? 'top' : $(element);
+    if ($element === 'top') {
+      $('html, body').animate({ scrollTop: 0 }, duration);
+      return;
+    }
+    $('html, body').animate({
+      scrollTop: $element.offset().top - 50
+    }, duration);
+  };
+
+  let $scrollToElement = $('.se-js-scroll-to');
+  $scrollToElement.on('click', function () {
+    let target = $(this).data('scroll-to');
+    scrollTo(600, target);
+  });
+});
+/*------------------------------------------- END SCROLL TO ---------------------------------------*/
+let positionsTabs = $('#se-c-positions-tabs');
+
+createSwiper(positionsTabs);
+/*---------------------------------FUNCTION FOR COLORS SELECTOR ON PRODUCT PAGE---------------------------------*/
+$(document).ready(()=>{
+
+  const colorsElements = {
+      btnsViewCont: $('.se-js-views'),
+      btnViewSelector: $('.se-js-btn-view-selector'),
+      insideSection: $('.se-js-inside'),
+      outsideSection: $('.se-js-outside'),
+      colorThumb: $('.se-js-color-thumb')
+  }
+  
+  const viewHandler = (element) => {
+      let $element = element,
+          isOutside = $element.data('target') === 'outside',
+          isACtive = $element.hasClass('active');
+  
+      if(isACtive)return;
+  
+      colorsElements.btnViewSelector.removeClass('active');
+  
+      $element.addClass('active');
+      
+      if (isOutside) {
+          if (colorsElements.outsideSection.is(':visible')) {
+              return;
+          }
+  
+          colorsElements.insideSection
+              .addClass('hidden')
+              .hide();
+  
+          colorsElements.outsideSection
+              .removeClass('hidden')
+              .show();
+  
+      } else {
+          if (colorsElements.insideSection.is(':visible')) {
+              return;
+          }
+          colorsElements.outsideSection
+              .addClass('hidden')
+              .hide();
+          colorsElements.insideSection
+              .removeClass('hidden')
+              .show();
+      }
+  }
+  
+  const thumbSelectorHandler = (element) => {
+      let $this = element,
+          color = $this.data('color'),
+          isActive = $this.hasClass('active');
+  
+      if(isActive) return;
+  
+      $this.parent().find(colorsElements.colorThumb).removeClass('active');
+      $this.closest('.se-js-colors-container').find('.se-c-color').hide();
+      
+      $this.closest('.se-js-colors-container').find('[data-view="'+ color +'"]').show();
+      
+      $this.addClass('active');
+  };
+  
+  
+  colorsElements.colorThumb.on('click', function(e){
+      e.preventDefault();
+      thumbSelectorHandler($(this));
+  });
+  
+  colorsElements.btnViewSelector.on('click', function(e){
+      e.preventDefault();
+      viewHandler($(this))
+  });
+});
+/*-------------------------------END FUNCTION FOR COLORS SELECTOR ON PRODUCT PAGE-------------------------------*/
+/*-----------------------------------------------FUNCTION TO MOVE-----------------------------------------------*/
+const moveTo = (element) => {
+  if(checkDevice() == 'desktop') return;
+
+  let $element = element,
+      $destiny;
+  
+  $element.each(()=>{
+    $destiny = $element.data('destiny');
+
+    $element.closest('.se-js-banner').find(`.${$destiny}`).append($element).removeClass('d-none');
+  });
+};
+
+$(document).ready(()=>{
+  let $moveTo = $('[data-destiny]');
+  
+  $moveTo.each(function(){
+    let $element = $(this);
+    moveTo($element)
+  });
+});
+/*---------------------------------------------END FUNCTION TO MOVE---------------------------------------------*/
+
+let seccionesList = [],
+    basicsList = [],
+    itemsGroup = [],
+    itemsList = [],
+    groupIndexByTitle = new Map();
+
+let norm = (s) => (s || '').toString().trim();
+
+$(document).ready(function(){
+  /*-----------------------------CAR TABLE LIBRARY-----------------------------*/
+  const tableItems = {
+      tableToggler: $('.se-js-table-list-toggler'),
+      selectVersionM: $('.se-js-version-select-mobile'),
+      selectVersionD: $('.se-js-version-checkbox-wrap'),
+      tableBasics: $('.se-js-table-basics'),
+      tableList : $('.se-js-table-list'),
+      versionsList: $('.se-js-versions-list')
+  }
+  /*---------------------------END CAR TABLE LIBRARY---------------------------*/
+
+  const tableInteractions = () => {
+    /*----------------------------FUNCTION FOR CAR TABLE----------------------------*/
+    tableItems.tableToggler.on('click', (e)=>{
+        e.preventDefault();
+        let $this = e.currentTarget,
+        $thisList = $(e.currentTarget).parent().find('.se-c-table-list-item-wrap');
+
+        $(e.currentTarget).toggleClass('active');
+        
+        $thisList.slideToggle();
+    });
+    /*--------------------------END FUNCTION FOR CAR TABLE--------------------------*/
+  
+    /*----------------------FUNCTION FOR VERSION SELECT MOBILE----------------------*/
+    let lastSelected;
+    tableItems.selectVersionM.on('change', (e)=>{
+        e.preventDefault();
+        let $this = $(e.currentTarget),
+        selectedVersion = $this.val();
+        
+        if(!lastSelected){
+          console.log('no hay previos')
+        }
+        
+        $(`[data-version="${lastSelected}"]`).hide();
+        $(`[data-version="${selectedVersion}"]`).fadeIn();
+        lastSelected = selectedVersion;
+    });
+    /*--------------------END FUNCTION FOR VERSION SELECT MOBILE--------------------*/
+
+    /*----------------------FUNCTION FOR DESKTOP SELECT MOBILE----------------------*/
+    tableItems.selectVersionD.find('.se-o-checkbox__version').on('change', (e) => {
+      e.preventDefault();
+      let $this = $(e.currentTarget),
+          selected = $this.val(),
+          isActive = $this.prop('checked');
+
+      console.log(selected);
+      
+      if(isActive){
+        $(`[data-version="${selected}"]`).fadeIn();
+      }else{
+        $(`[data-version="${selected}"]`).fadeOut();
+      }
+
+    });
+    /*--------------------END FUNCTION FOR DEKSTOP SELECT MOBILE--------------------*/
+  }
+
+  /*-------------------------FUNCTION FOR VERSIONS DETAILS-------------------------*/
+
+  const createVersionSelect = (version, i) => {
+    let status = i == 0 ? 'selected disabled' : '',
+      versionSelect = `<option value="version-${i+1}" ${status}>${version}</option>`;
+    tableItems.selectVersionM.append(versionSelect);
+  };
+
+  const createVersionCheckbox = (version, i) => {
+    if(i == 0) return;
+    let verscionCheckbox = 
+          `<div class="se-c-input-group__checkbox">
+              <input type="checkbox" name="version-${i+1}" value="version-${i+1}" id="version-${i+1}" class="se-o-checkbox__version">
+              <label for="version-${i+1}">${version}</label>
+          </div>`;
+    tableItems.selectVersionD.append(verscionCheckbox);
+  };
+
+  const createVersionsListItem = (version, i) => {
+    // console.log(version, i)
+    if(!version.length) return;
+    let display = i == 0 ? '' : 'style="display: none;"',
+      versionsListItem = 
+            `<p class="se-c-table-list-item-data" data-version="version-${i + 1}" ${display}>
+                ${version}
+            </p>`;
+    tableItems.versionsList.append(versionsListItem)
+  };
+
+  const createTableBasics = (titles) => {
+    if(!Array.isArray(titles) || !titles.length){
+      console.warn('Hubo un error al procesar la tabla, pónte en contacto con el administrador del sitio.');
+      return;
+    };
+
+    $.each(titles, (i, title) => {
+      const itemTitle = `<div class="se-c-table-list-group se-bg-table" data-item="${normaliceText(title)}">
+                              <p class="se-bg-table se-c-table-list-item-title">${title}</p>
+                          </div>`;
+      tableItems.tableBasics.append(itemTitle).removeClass('d-none');
+    });
+  };
+
+  // por si acaso (si ya la tienes definida, omite esto)
+  let normaliceText = (s) => (s || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '');
+
+  // itemsGroup: [{ title, active, items:[{title, description, equipped}] }]
+  // versiones:   [{ title, basics:[...], groups:[...] }]
+
+  const createVersionItemsGroup = (versiones) => {
+    let modelVersion, tableList, tableListWrap, tableItem;
+
+    $.each(itemsGroup, (groupIdx, group) => {
+      let { title: groupTitle, items } = group;
+
+      tableList = $(`
+        <div class="se-c-table-list-specs se-c-table-exterior">
+          <button class="se-c-table-list-group-title se-js-table-list-toggler">${groupTitle}</button>
+        </div>
+      `);
+
+      tableListWrap = $(`
+        <div class="se-c-table-list-item-wrap"
+            data-group="${normaliceText(groupTitle)}"
+            style="display: none;"></div>
+      `);
+
+      $.each(items || [], (itemIdx, item) => {
+        const { title: titleItem } = item;
+        tableItem = $(`
+          <div class="se-c-table-list-group" data-item="${normaliceText(titleItem)}">
+            <p class="se-c-table-list-item-title">${titleItem}</p>
+          </div>
+        `);
+        tableListWrap.append(tableItem);
+      });
+
+      tableList.append(tableListWrap);
+      tableItems.tableList.append(tableList);
+    });
+
+    $.each(versiones, (verIdx, verObj) => {
+      // verIdx -> 0,1,2...
+      const currentVersionNumber = verIdx + 1;
+      const { title: modelVersionTitle, groups: modelGroups = [] } = verObj;
+
+      // por cada grupo de ESTA versión
+      $.each(modelGroups, (grpIdx, group) => {
+        const { title: groupTitle, items: groupItems = [] } = group;
+
+        // por cada item del grupo de ESTA versión
+        $.each(groupItems, (itIdx, item) => {
+          const { title: itemTitle, description: itemDescription = '', equipped: itemEquipped = false } = item;
+
+          const display = currentVersionNumber === 1 ? '' : 'style="display: none;"';
+          const value = itemDescription || (itemEquipped ? '●' : '—');
+
+          const $valueNode = $(`
+            <p class="se-c-table-list-item-data"
+              data-version="version-${currentVersionNumber}"
+              ${display}>${value}</p>
+          `);
+
+          $('.se-c-table')
+            .find(`[data-item="${normaliceText(itemTitle)}"]`)
+            .append($valueNode);
+        });
+      });
+    });
+
+    $.each(versiones, (verIdx, v) => {
+      const modelVersionNumber = verIdx + 1;
+
+      $.each(v.basics || [], (bIdx, basic) => {
+        let itemTitle = basic.title;
+        let description = basic.description;
+        let display = modelVersionNumber === 1 ? '' : 'style="display: none;"';
+
+        let $dataItem = $(`
+          <p class="se-c-table-list-item-data"
+            data-version="version-${modelVersionNumber}"
+            ${display}>${description}</p>
+        `);
+
+        tableItems.tableBasics
+          .find(`[data-item="${normaliceText(itemTitle)}"]`)
+          .append($dataItem);
+      });
+    });
+  };
+
+
+  const processVersions = (versiones) => {
+    if (!Array.isArray(versiones) || !versiones.length) return;
+
+    $.each(versiones, (i, versionObj) => {
+
+      if (versionObj.title) {
+        createVersionSelect(versionObj.title, i);
+        createVersionCheckbox(versionObj.title, i);
+        createVersionsListItem(versionObj.title, i);
+      };
+
+      if(Array.isArray(versionObj.basics) && versionObj.basics.length){
+        $.each(versionObj.basics, (j, basics) => {
+          if(basics && basics.title && !basicsList.includes(basics.title)) basicsList.push(basics.title);
+        });
+      };
+
+      if (Array.isArray(versionObj.groups) && versionObj.groups.length) {
+        $.each(versionObj.groups, (k, group) => {
+          const title = norm(group?.title);
+          const active = !!group?.active;
+          const items = Array.isArray(group?.items) ? group.items : [];
+
+          if (!title) return; // skip
+
+          // 1) Obtener/crear el grupo en itemsGroup
+          let idx = groupIndexByTitle.get(title);
+          if (idx === undefined) {
+            itemsGroup.push({ title, active, items: [] });
+            idx = itemsGroup.length - 1;
+            groupIndexByTitle.set(title, idx);
+          } else {
+            // si cualquier versión lo trae activo, mantenlo activo
+            if (active) itemsGroup[idx].active = true;
+          }
+
+          // 2) Insertar items del grupo (dedupe por título del item)
+          $.each(items, (_, it) => {
+            let itTitle = norm(it?.title);
+            if (!itTitle) return;
+
+            // ¿ya existe ese item por título en este grupo?
+            let exists = itemsGroup[idx].items.some(x => norm(x.title) === itTitle);
+            if (!exists) {
+              itemsGroup[idx].items.push({
+                title: itTitle,
+                description: norm(it?.description),
+                equipped: !!it?.equipped
+              });
+            }
+          });
+        });
+      }
+    });
+
+    $('#especificaciones').fadeIn();
+
+    createTableBasics(basicsList);
+    createVersionItemsGroup(versiones);
+    tableItems.tableToggler = $('.se-js-table-list-toggler');
+
+    setTimeout(() => {
+      $('#especificaciones .se-c-loading').hide().remove();
+      $('.se-c-table').fadeIn();
+    }, 2000);
+
+    tableInteractions();
+  };
+
+  const rawVersiones = (typeof window !== 'undefined' && Array.isArray(window.versiones)) ? window.versiones : [];
+  // Filtra versiones sin contenido útil (sin basics y sin groups)
+  const versionesData = rawVersiones.filter(v => (
+    (Array.isArray(v?.basics) && v.basics.length > 0) ||
+    (Array.isArray(v?.groups) && v.groups.length > 0)
+  ));
+
+  if (versionesData.length > 0) {
+    processVersions(versionesData);
+    // console.table(versionesData);
+  } else {
+    console.warn('No se realiza carga de versiones por modelo.')
+    // console.warn('No hay versiones cargadas para este modelo.');
+    return;
+  }
+  /*-----------------------END FUNCTION FOR VERSIONS DETAILS-----------------------*/
+
+});

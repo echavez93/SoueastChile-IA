@@ -1,0 +1,31 @@
+.lfr-layout-structure-item-container {padding: 0;}.lfr-layout-structure-item-row {overflow: hidden;}.lfr-layout-structure-item-4876f736-2244-32fe-00f5-f5d71ba928c5 {
+display: none !important;
+}
+.lfr-layout-structure-item-b99bddef-3e3f-6ed4-3c9a-32639668ef58 {
+gap: 20px;
+}.lfr-layout-structure-item-7815af11-5179-31c9-762e-05240710e885 {
+margin-bottom: var(--spacer-3,1rem) !important;
+}
+.lfr-layout-structure-item-407c31cc-0dfb-2937-4ea8-c564c357a264 img{
+width: 40% !important;
+@media only screen and (min-width: 768px){
+  width: 176px !important;
+}
+}.lfr-layout-structure-item-2ef2330c-4211-b18f-3fbf-9139ae6a327f {
+gap: 20px;
+}.lfr-layout-structure-item-b8145241-1e77-cdc8-99a0-f4486c27be02 {
+display: none !important;
+}
+.lfr-layout-structure-item-ead25c63-d4e0-3502-f421-cb80aa9a07a5 {
+gap: 20px;
+}.lfr-layout-structure-item-28ad230e-85a7-82aa-74ad-c6778326b47b {
+color: whiteColor !important;
+}
+.lfr-layout-structure-item-28ad230e-85a7-82aa-74ad-c6778326b47b {
+font-size: 20px !important;
+}
+@media only screen and (min-width: 768px){
+.lfr-layout-structure-item-28ad230e-85a7-82aa-74ad-c6778326b47b {
+font-size: 45px !important;
+}
+}

@@ -1,0 +1,96 @@
+$(document).ready(function () {
+  const SESSION_TIMEOUT = 7 * 60 * 1000;
+  let sessionActive = true;
+  let sessionTimeout;
+  let initialHash = window.location.hash;
+
+  const EXCLUDED_URLS = [
+    "https://www.kaufmann.cl/gracias-generico",
+    "https://www.kaufmann.cl/automoviles/campana",
+    "https://www.kaufmann.cl/oportunidades-autos"
+  ];
+
+  function isExcludedUrl() {
+    const currentUrl = window.location.href.split('?')[0];
+    return EXCLUDED_URLS.includes(currentUrl);
+  }
+
+  function getUTMParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let utms = {};
+    for (const [key, value] of urlParams.entries()) {
+      if (key.startsWith("utm_") || key === "gclid" || key === "fbclid") {
+        utms[key] = value;
+      }
+    }
+    return utms;
+  }
+
+  function storeUTMInSessionStorage(utms) {
+    console.log("Guardando UTM en sessionStorage:", utms);
+    sessionStorage.setItem("utmParams", JSON.stringify(utms));
+  }
+
+  function getUTMFromSessionStorage() {
+    const utmString = sessionStorage.getItem("utmParams");
+    return utmString ? JSON.parse(utmString) : null;
+  }
+
+  function applyStoredUTMToUrl() {
+    const storedUTMs = getUTMFromSessionStorage();
+    if (!storedUTMs) return;
+
+    const currentUrl = new URL(window.location.href);
+    const params = new URLSearchParams(currentUrl.search);
+
+    Object.entries(storedUTMs).forEach(([key, value]) => {
+      if (!params.has(key)) {
+        params.set(key, value);
+      }
+    });
+
+    let newUrl = `${currentUrl.pathname}?${params.toString()}`;
+    if (initialHash) {
+      newUrl += initialHash;
+    }
+
+    history.replaceState({}, '', newUrl);
+  }
+
+  function compareAndStoreUTM() {
+    const currentUTMs = getUTMParams();
+    const storedUTMs = getUTMFromSessionStorage();
+
+    if (JSON.stringify(currentUTMs) !== JSON.stringify(storedUTMs)) {
+      if (Object.keys(currentUTMs).length > 0) {
+        storeUTMInSessionStorage(currentUTMs);
+      }
+    }
+
+    applyStoredUTMToUrl();
+  }
+
+  $(window).on("load", function () {
+    if (isExcludedUrl()) {
+      console.log("URL excluida, no se modificará con UTM");
+      return;
+    }
+
+    compareAndStoreUTM();
+  });
+
+  function resetSessionTimeout() {
+    if (sessionTimeout) {
+      clearTimeout(sessionTimeout);
+    }
+    sessionActive = true;
+    sessionTimeout = setTimeout(() => {
+      sessionActive = false;
+      console.log("Sesión expirada por inactividad.");
+      sessionStorage.removeItem("utmParams");
+      sessionStorage.removeItem("hasHandledInitialHash");
+    }, SESSION_TIMEOUT);
+  }
+
+  $(window).on("mousemove keydown scroll click", resetSessionTimeout);
+});
